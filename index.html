@@ -1,1 +1,568 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비트코인 시세 영향 인자 분석</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Space+Mono:wght@400;700&display=swap');
 
+  :root {
+    --bg: #080c14;
+    --panel: #0d1422;
+    --panel2: #111827;
+    --border: #1e2d45;
+    --accent: #f7931a;
+    --accent2: #f0b90b;
+    --gold: #FFD700;
+    --blue: #3b82f6;
+    --green: #22c55e;
+    --red: #ef4444;
+    --purple: #a855f7;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --glow: rgba(247,147,26,0.15);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Header */
+  .header {
+    background: linear-gradient(135deg, #0d1422 0%, #0a0f1e 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 40px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '₿';
+    position: absolute;
+    right: -30px;
+    top: -40px;
+    font-size: 220px;
+    color: rgba(247,147,26,0.04);
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .header-badge {
+    display: inline-block;
+    background: rgba(247,147,26,0.12);
+    border: 1px solid rgba(247,147,26,0.3);
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    font-family: 'Space Mono', monospace;
+  }
+  .header h1 {
+    font-size: 30px;
+    font-weight: 900;
+    line-height: 1.2;
+    background: linear-gradient(90deg, #fff 0%, #f7931a 60%, #f0b90b 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 300;
+  }
+  .header-stats {
+    display: flex;
+    gap: 32px;
+    margin-top: 20px;
+  }
+  .hstat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .hstat-label { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+  .hstat-val { font-size: 18px; font-weight: 700; font-family: 'Space Mono', monospace; color: var(--accent); }
+
+  /* Nav tabs */
+  .nav {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+  .nav-tab {
+    padding: 14px 22px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  /* Main content */
+  .main { padding: 32px 40px; max-width: 1200px; margin: 0 auto; }
+  
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .card-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+  .card-sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.6;
+  }
+
+  /* Grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  @media(max-width: 768px) { .grid2, .grid3 { grid-template-columns: 1fr; } }
+
+  /* Chart canvas */
+  canvas { display: block; }
+
+  /* Correlation matrix */
+  .corr-matrix {
+    display: grid;
+    grid-template-columns: 120px repeat(4, 1fr);
+    gap: 2px;
+    font-size: 11px;
+  }
+  .corr-cell {
+    padding: 10px 6px;
+    text-align: center;
+    border-radius: 4px;
+    font-weight: 600;
+    font-family: 'Space Mono', monospace;
+  }
+  .corr-header {
+    background: transparent;
+    color: var(--muted);
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 700;
+    padding: 8px 4px;
+    letter-spacing: 0.5px;
+  }
+  .corr-row-label {
+    display: flex;
+    align-items: center;
+    padding: 10px 8px;
+    font-size: 11px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-weight: 500;
+  }
+
+  /* Halving timeline */
+  .timeline {
+    position: relative;
+    padding-left: 30px;
+  }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, var(--accent) 0%, var(--border) 100%);
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 28px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -24px;
+    top: 6px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px rgba(247,147,26,0.5);
+    border: 2px solid var(--bg);
+  }
+  .timeline-date {
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent);
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .timeline-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+  .timeline-body {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .timeline-gain {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+  }
+  .gain-pos { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+  .gain-neg { background: rgba(239,68,68,0.15); color: var(--red); border: 1px solid rgba(239,68,68,0.3); }
+
+  /* Insight boxes */
+  .insight {
+    background: rgba(247,147,26,0.06);
+    border: 1px solid rgba(247,147,26,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin-top: 16px;
+  }
+  .insight-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .insight p {
+    font-size: 12px;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .insight p strong { color: var(--text); }
+
+  /* Bars */
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .bar-label { font-size: 12px; color: var(--muted); width: 110px; flex-shrink: 0; text-align: right; }
+  .bar-track {
+    flex: 1;
+    height: 22px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 1s ease;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 8px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Space Mono', monospace;
+  }
+  .bar-val { font-size: 11px; font-weight: 700; font-family: 'Space Mono', monospace; width: 60px; flex-shrink: 0; }
+
+  /* Summary table */
+  .stbl { width: 100%; border-collapse: collapse; }
+  .stbl th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    color: var(--muted);
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid var(--border);
+    text-transform: uppercase;
+  }
+  .stbl td {
+    padding: 12px 14px;
+    font-size: 12px;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    vertical-align: top;
+    line-height: 1.5;
+  }
+  .stbl tr:last-child td { border-bottom: none; }
+  .stbl tr:hover td { background: rgba(255,255,255,0.02); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+  .badge-strong { background: rgba(34,197,94,0.15); color: var(--green); }
+  .badge-moderate { background: rgba(247,147,26,0.15); color: var(--accent); }
+  .badge-weak { background: rgba(100,116,139,0.15); color: var(--muted); }
+  .badge-inverse { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Gauge */
+  .gauge-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .gauge-label { font-size: 12px; color: var(--text); width: 100px; flex-shrink: 0; font-weight: 500; }
+  .gauge-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .gauge-fill {
+    height: 100%;
+    border-radius: 4px;
+  }
+  .gauge-pct { font-size: 11px; font-family: 'Space Mono', monospace; font-weight: 700; width: 40px; flex-shrink: 0; text-align: right; }
+  .gauge-dir { font-size: 10px; color: var(--muted); width: 40px; flex-shrink: 0; text-align: right; }
+
+  /* Price chart custom */
+  .price-chart-wrap { position: relative; overflow: hidden; }
+  
+  /* SVG chart */
+  svg text { font-family: 'Noto Sans KR', 'Space Mono', monospace; }
+
+  /* Arrow indicators */
+  .arrow-up { color: var(--green); }
+  .arrow-down { color: var(--red); }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .legend-line { width: 16px; height: 3px; border-radius: 2px; flex-shrink: 0; }
+
+  /* Responsive chart container */
+  .chart-container { width: 100%; overflow: hidden; }
+
+  /* Scroll */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-badge">RESEARCH ANALYSIS 2025</div>
+  <h1>비트코인 시세 영향 인자 분석</h1>
+  <p>전기료 · 미국 금리 · 반감기 · 금값 — 4대 요인과 비트코인 가격의 상관관계</p>
+  <div class="header-stats">
+    <div class="hstat">
+      <span class="hstat-label">BTC 현재가 (2025)</span>
+      <span class="hstat-val" style="color:#f7931a">~$100K</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">분석 기간</span>
+      <span class="hstat-val" style="color:#e2e8f0;font-size:14px">2012–2025</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">분석 항목</span>
+      <span class="hstat-val" style="color:#3b82f6;font-size:14px">4 Factors</span>
+    </div>
+    <div class="hstat">
+      <span class="hstat-label">최근 ATH</span>
+      <span class="hstat-val" style="color:#22c55e">$126K</span>
+    </div>
+  </div>
+</div>
+
+<div class="nav">
+  <div class="nav-tab active" onclick="switchTab(0)">📊 종합 개요</div>
+  <div class="nav-tab" onclick="switchTab(1)">⚡ 전기료</div>
+  <div class="nav-tab" onclick="switchTab(2)">🏛️ 미국 금리</div>
+  <div class="nav-tab" onclick="switchTab(3)">₿ 반감기</div>
+  <div class="nav-tab" onclick="switchTab(4)">🥇 금값</div>
+  <div class="nav-tab" onclick="switchTab(5)">📋 종합 비교</div>
+</div>
+
+<div class="main">
+
+  <!-- ===== SECTION 0: 종합 개요 ===== -->
+  <div class="section active" id="sec0">
+    <div class="card fade-in">
+      <div class="card-title"><span class="dot"></span> 4대 영향 인자 — 상관관계 강도 요약</div>
+      <div class="card-sub">각 요인이 비트코인 시세에 미치는 영향의 방향성과 강도를 시각화한 것입니다.</div>
+
+      <div style="margin-bottom: 24px;">
+        <div class="gauge-row">
+          <div class="gauge-label">⚡ 전기료</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:55%;background:linear-gradient(90deg,#f7931a,#f0b90b)"></div></div>
+          <div class="gauge-pct" style="color:#f7931a">55%</div>
+          <div class="gauge-dir" style="color:#f7931a">정(+)</div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label">🏛️ 미국 금리</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:80%;background:linear-gradient(90deg,#ef4444,#dc2626)"></div></div>
+          <div class="gauge-pct" style="color:#ef4444">80%</div>
+          <div class="gauge-dir" style="color:#ef4444">역(−)</div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label">₿ 반감기</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:90%;background:linear-gradient(90deg,#22c55e,#16a34a)"></div></div>
+          <div class="gauge-pct" style="color:#22c55e">90%</div>
+          <div class="gauge-dir" style="color:#22c55e">정(+)</div>
+        </div>
+        <div class="gauge-row">
+          <div class="gauge-label">🥇 금값</div>
+          <div class="gauge-track"><div class="gauge-fill" style="width:40%;background:linear-gradient(90deg,#FFD700,#fbbf24)"></div></div>
+          <div class="gauge-pct" style="color:#FFD700">40%</div>
+          <div class="gauge-dir" style="color:#FFD700">정(+)</div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted)">※ 상관계수 기반 직관적 강도 표현 (역방향 = 금리 상승 시 BTC 하락)</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#22c55e;box-shadow:0 0 8px #22c55e"></span> 비트코인 역사적 가격 추이</div>
+        <div class="card-sub">주요 이벤트와 함께 보는 BTC 가격 흐름</div>
+        <div class="chart-container">
+          <svg viewBox="0 0 520 220" width="100%" style="overflow:visible">
+            <defs>
+              <linearGradient id="btcGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f7931a" stop-opacity="0.3"/>
+                <stop offset="100%" stop-color="#f7931a" stop-opacity="0.01"/>
+              </linearGradient>
+            </defs>
+            <!-- Grid lines -->
+            <line x1="40" y1="10" x2="510" y2="10" stroke="#1e2d45" stroke-width="0.5"/>
+            <line x1="40" y1="55" x2="510" y2="55" stroke="#1e2d45" stroke-width="0.5"/>
+            <line x1="40" y1="100" x2="510" y2="100" stroke="#1e2d45" stroke-width="0.5"/>
+            <line x1="40" y1="145" x2="510" y2="145" stroke="#1e2d45" stroke-width="0.5"/>
+            <line x1="40" y1="190" x2="510" y2="190" stroke="#1e2d45" stroke-width="0.5"/>
+            <!-- Y labels -->
+            <text x="35" y="14" fill="#64748b" font-size="8" text-anchor="end">$120K</text>
+            <text x="35" y="59" fill="#64748b" font-size="8" text-anchor="end">$90K</text>
+            <text x="35" y="104" fill="#64748b" font-size="8" text-anchor="end">$60K</text>
+            <text x="35" y="149" fill="#64748b" font-size="8" text-anchor="end">$30K</text>
+            <text x="35" y="194" fill="#64748b" font-size="8" text-anchor="end">$0</text>
+
+            <!-- BTC Price path (approximate, normalized) -->
+            <!-- Area fill -->
+            <path d="M40,188 L60,185 L80,183 L100,180 L120,175 L140,182 L160,160 L180,140 L190,168 L200,162 L215,145 L225,100 L230,130 L240,155 L248,105 L255,95 L262,120 L268,115 L274,60 L280,80 L290,120 L296,140 L300,120 L306,95 L312,105 L316,90 L320,100 L328,118 L334,105 L340,110 L346,95 L352,90 L358,80 L364,90 L370,95 L378,98 L384,80 L390,88 L398,92 L404,98 L410,90 L418,85 L426,92 L432,85 L440,80 L450,55 L460,65 L470,60 L480,58 L490,62 L500,70 L510,65 L510,190 L40,190 Z" fill="url(#btcGrad)"/>
+            <!-- Price line -->
+            <path d="M40,188 L60,185 L80,183 L100,180 L120,175 L140,182 L160,160 L180,140 L190,168 L200,162 L215,145 L225,100 L230,130 L240,155 L248,105 L255,95 L262,120 L268,115 L274,60 L280,80 L290,120 L296,140 L300,120 L306,95 L312,105 L316,90 L320,100 L328,118 L334,105 L340,110 L346,95 L352,90 L358,80 L364,90 L370,95 L378,98 L384,80 L390,88 L398,92 L404,98 L410,90 L418,85 L426,92 L432,85 L440,80 L450,55 L460,65 L470,60 L480,58 L490,62 L500,70 L510,65" fill="none" stroke="#f7931a" stroke-width="2"/>
+
+            <!-- Halving markers -->
+            <line x1="140" y1="10" x2="140" y2="190" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+            <line x1="248" y1="10" x2="248" y2="190" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+            <line x1="316" y1="10" x2="316" y2="190" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+            <line x1="410" y1="10" x2="410" y2="190" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.6"/>
+
+            <!-- Rate hike period shading -->
+            <rect x="350" y="10" width="90" height="180" fill="rgba(239,68,68,0.06)" rx="2"/>
+            
+            <!-- Labels -->
+            <text x="140" y="8" fill="#22c55e" font-size="7" text-anchor="middle">1차반감</text>
+            <text x="248" y="8" fill="#22c55e" font-size="7" text-anchor="middle">2차반감</text>
+            <text x="316" y="8" fill="#22c55e" font-size="7" text-anchor="middle">3차반감</text>
+            <text x="410" y="8" fill="#22c55e" font-size="7" text-anchor="middle">4차반감</text>
+            <text x="395" y="202" fill="#ef4444" font-size="7" text-anchor="middle">금리인상기</text>
+
+            <!-- X labels -->
+            <text x="60" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2013</text>
+            <text x="160" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2016</text>
+            <text x="248" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2018</text>
+            <text x="316" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2020</text>
+            <text x="380" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2022</text>
+            <text x="440" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2024</text>
+            <text x="500" y="202" fill="#64748b" font-size="7.5" text-anchor="middle">2025</text>
+            
+            <!-- ATH label -->
+            <text x="460" y="52" fill="#f7931a" font-size="8" font-weight="bold">ATH $126K</text>
+          </svg>
+        </div>
+        <div class="legend">
+          <div class="legend-item"><div class="legend-line" style="background:#f7931a"></div> BTC 가격</div>
+          <div class="legend-item"><div class="legend-line" style="background:#22c55e;border-top:2px dashed #22c55e;background:none;width:16px"></div> 반감기</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.4);border-radius:2px;width:14px;height:10px"></div> 금리인상기</div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#3b82f6;box-shadow:0 0 8px #3b82f6"></span> 인자별 상관 방향 다이어그램</div>
+        <div class="card-sub">각 요인이 BTC 가격과 어떤 방향으로 연동되는지 구조도로 표현</div>
+        <svg viewBox="0 0 420 260" width="100%">
+          <!-- Center BTC -->
+          <circle cx="210" cy="130" r="42" fill="rgba(247,147,26,0.12)" stroke="#f7931a" stroke-width="2"/>
+          <text x="210" y="126" fill="#f7931a" font-size="18" font-weight="bold" text-anchor="middle" font-family="'Space Mono',monospace">₿TC</text>
+          <text x="210" y="142" fill="#e2e8f0" font-size="9" text-anchor="middle">비트코인</text>
+
+          <!-- 전기료 (top-left) -->
+          <circle cx="70" cy="60" r="32" fill="rgba(240,185,11,0.1)" stroke="#f0b90b" stroke-width="1.5"/>
+          <text x="70" y="57" fill="#f0b90b" font-size="9" font-weight="bold" text-anchor="middle">⚡ 전기료</text>
+          <text x="70" y="70" fill="#64748b" font-size="7" text-anchor="middle">채굴원가</text>
+          <!-- Arrow: 전기료 → BTC (정) -->
+          <line x1="100" y1="75" x2="172" y2="108" stroke="#f0b90b" stroke-width="1.5" marker-end="url(#arrowPos)"/>
+          <text x="128" y="84" fill="#22c55e" font-size="8" font-weight="bold" text-anchor="middle">정(+)</text>
+
+          <!-- 금리 (top-right) -->
+          <circle cx="350" cy="60" r="32" fill="rgba(239,68,68,0.1)" stroke="#ef4444" stroke-width="1.5"/>
+          <text x="350" y="57" fill="#ef4444" font-size="9" font-weight="bold" text-anchor="middle">🏛️ 금리</text>
+          <text x="350" y="70" fill="#64748b" font-size="7" text-anchor="middle">Fed rate</text>
+          <!-- Arrow: 금리 → BTC (역) -->
+          <line x1="320" y1="75" x2="248" y2="108" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowNeg)"/>
+          <text x="292" y="84" fill="#ef4444" font-size="8" font-weight="bold" text-anchor="middle">역(−)</text>
+
+          <!-- 반감기 (bottom-left) -->
+          <circle cx="70" cy="210" r="32" fill="rgba(34,197,94,0.1)" stroke="#22c55e" stroke-width="1.5"/>
+          <text x="70" y="207" fill="#22c55e" font-size="9" font-weight="bold" text-anchor="middle">₿ 반감기</text>
+          <text x="70" y="220" fill="#64748b" font-size="7" text-anchor="middle">공급충격</text>
+          <!-- Arrow: 반감기 → BTC (정) -->
+          <line x1="100" y1="195" x2="172" y2="154" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowPos2)"/>
+          <text x="128" y="183" fill="#22c55e" font-size="8" font-weight="bold" text-anchor="middle">정(+)</text>
