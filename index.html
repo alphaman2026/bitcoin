@@ -566,3 +566,336 @@
           <!-- Arrow: 반감기 → BTC (정) -->
           <line x1="100" y1="195" x2="172" y2="154" stroke="#22c55e" stroke-width="1.5" marker-end="url(#arrowPos2)"/>
           <text x="128" y="183" fill="#22c55e" font-size="8" font-weight="bold" text-anchor="middle">정(+)</text>
+
+          <!-- 금값 (bottom-right) -->
+          <circle cx="350" cy="210" r="32" fill="rgba(255,215,0,0.1)" stroke="#FFD700" stroke-width="1.5"/>
+          <text x="350" y="207" fill="#FFD700" font-size="9" font-weight="bold" text-anchor="middle">🥇 금값</text>
+          <text x="350" y="220" fill="#64748b" font-size="7" text-anchor="middle">안전자산</text>
+          <!-- Arrow: 금 → BTC (정, 약) -->
+          <line x1="320" y1="195" x2="248" y2="154" stroke="#FFD700" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arrowGold)"/>
+          <text x="292" y="183" fill="#FFD700" font-size="8" font-weight="bold" text-anchor="middle">약정(+)</text>
+
+          <!-- Arrow markers -->
+          <defs>
+            <marker id="arrowPos" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#22c55e"/>
+            </marker>
+            <marker id="arrowPos2" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#22c55e"/>
+            </marker>
+            <marker id="arrowNeg" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#ef4444"/>
+            </marker>
+            <marker id="arrowGold" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#FFD700"/>
+            </marker>
+          </defs>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Correlation matrix -->
+    <div class="card fade-in">
+      <div class="card-title"><span class="dot" style="background:#a855f7;box-shadow:0 0 8px #a855f7"></span> 상관계수 매트릭스</div>
+      <div class="card-sub">비트코인과 4대 요인 간의 상관 강도 (−1 ~ +1, 색상 강도 = 상관 강도)</div>
+      <div class="corr-matrix">
+        <div class="corr-header"></div>
+        <div class="corr-header">BTC 가격</div>
+        <div class="corr-header">전기료</div>
+        <div class="corr-header">미국 금리</div>
+        <div class="corr-header">금값</div>
+
+        <div class="corr-row-label">BTC 가격</div>
+        <div class="corr-cell" style="background:rgba(247,147,26,0.8);color:#000">1.00</div>
+        <div class="corr-cell" style="background:rgba(240,185,11,0.35);color:#f0b90b">+0.55</div>
+        <div class="corr-cell" style="background:rgba(239,68,68,0.4);color:#fca5a5">−0.72</div>
+        <div class="corr-cell" style="background:rgba(255,215,0,0.25);color:#FFD700">+0.38</div>
+
+        <div class="corr-row-label">전기료 (채굴원가)</div>
+        <div class="corr-cell" style="background:rgba(240,185,11,0.35);color:#f0b90b">+0.55</div>
+        <div class="corr-cell" style="background:rgba(247,147,26,0.8);color:#000">1.00</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">−0.12</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">+0.22</div>
+
+        <div class="corr-row-label">미국 금리 (Fed)</div>
+        <div class="corr-cell" style="background:rgba(239,68,68,0.4);color:#fca5a5">−0.72</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">−0.12</div>
+        <div class="corr-cell" style="background:rgba(247,147,26,0.8);color:#000">1.00</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">+0.18</div>
+
+        <div class="corr-row-label">금값 (Gold)</div>
+        <div class="corr-cell" style="background:rgba(255,215,0,0.25);color:#FFD700">+0.38</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">+0.22</div>
+        <div class="corr-cell" style="background:rgba(100,116,139,0.15);color:#64748b">+0.18</div>
+        <div class="corr-cell" style="background:rgba(247,147,26,0.8);color:#000">1.00</div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:12px">※ 2015~2025년 장기 데이터 기반 근사치. 금리 상관은 역방향(−)이 강력함을 의미.</div>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 1: 전기료 ===== -->
+  <div class="section" id="sec1">
+    <div class="card fade-in">
+      <div class="card-title"><span class="dot" style="background:#f0b90b;box-shadow:0 0 8px #f0b90b"></span> 전기료와 비트코인 — 채굴 원가 메커니즘</div>
+      <div class="card-sub">전기료는 비트코인 채굴의 최대 운영 비용(전체 원가의 60~80%)으로, BTC 시세에 복잡한 비선형적 영향을 줍니다.</div>
+      
+      <!-- 국가별 채굴 비용 -->
+      <div style="margin-bottom: 8px; font-size: 12px; font-weight: 700; color: var(--text);">🌍 국가별 BTC 1개 채굴 전기 비용 (2025)</div>
+      <div style="margin-bottom: 20px;">
+        <div class="bar-row">
+          <div class="bar-label">이란</div>
+          <div class="bar-track"><div class="bar-fill" style="width:1%;background:#22c55e;min-width:30px;color:#000">$1.3K</div></div>
+          <div class="bar-val" style="color:#22c55e">$1,324</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">미국 텍사스</div>
+          <div class="bar-track"><div class="bar-fill" style="width:35%;background:#3b82f6">$35K</div></div>
+          <div class="bar-val" style="color:#3b82f6">~$35K</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">미국 평균</div>
+          <div class="bar-track"><div class="bar-fill" style="width:88%;background:#f7931a">$111K</div></div>
+          <div class="bar-val" style="color:#f7931a">$111K</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">독일</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#ef4444">$269K</div></div>
+          <div class="bar-val" style="color:#ef4444">$269K</div>
+        </div>
+        <div class="bar-row">
+          <div class="bar-label">아일랜드</div>
+          <div class="bar-track"><div class="bar-fill" style="width:100%;background:#ef4444">$321K</div></div>
+          <div class="bar-val" style="color:#ef4444">$321K</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:20px">※ BTC 가격 ~$100K 기준. 전기료 차이로 채굴 비용이 최대 242배 차이 발생</div>
+    </div>
+
+    <div class="grid2">
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#f0b90b"></span> 손익분기 전기 단가 추이</div>
+        <div class="card-sub">반감기 후 채굴 손익분기 전기 단가 변화</div>
+        <svg viewBox="0 0 380 180" width="100%">
+          <defs>
+            <linearGradient id="bevGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#f0b90b" stop-opacity="0.2"/>
+              <stop offset="100%" stop-color="#f0b90b" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <!-- Grid -->
+          <line x1="40" y1="20" x2="360" y2="20" stroke="#1e2d45" stroke-width="0.5"/>
+          <line x1="40" y1="60" x2="360" y2="60" stroke="#1e2d45" stroke-width="0.5"/>
+          <line x1="40" y1="100" x2="360" y2="100" stroke="#1e2d45" stroke-width="0.5"/>
+          <line x1="40" y1="140" x2="360" y2="140" stroke="#1e2d45" stroke-width="0.5"/>
+          <!-- Y labels -->
+          <text x="35" y="23" fill="#64748b" font-size="7.5" text-anchor="end">$0.15</text>
+          <text x="35" y="63" fill="#64748b" font-size="7.5" text-anchor="end">$0.12</text>
+          <text x="35" y="103" fill="#64748b" font-size="7.5" text-anchor="end">$0.09</text>
+          <text x="35" y="143" fill="#64748b" font-size="7.5" text-anchor="end">$0.06</text>
+          <!-- Area -->
+          <path d="M50,60 L90,75 L130,95 L170,85 L210,70 L250,80 L290,100 L330,108 L350,85 L350,140 L50,140 Z" fill="url(#bevGrad)"/>
+          <!-- Line -->
+          <path d="M50,60 L90,75 L130,95 L170,85 L210,70 L250,80 L290,100 L330,108 L350,85" fill="none" stroke="#f0b90b" stroke-width="2"/>
+          <!-- Breakeven safe zone -->
+          <rect x="40" y="100" width="320" height="40" fill="rgba(34,197,94,0.06)" rx="2"/>
+          <text x="200" y="125" fill="#22c55e" font-size="8" text-anchor="middle" opacity="0.8">채굴 수익 구간 ($0.05~0.07/kWh)</text>
+          <!-- Halving 2024 marker -->
+          <line x1="290" y1="20" x2="290" y2="140" stroke="#22c55e" stroke-width="1" stroke-dasharray="3,3" opacity="0.7"/>
+          <text x="290" y="16" fill="#22c55e" font-size="7" text-anchor="middle">4차반감기</text>
+          <!-- X labels -->
+          <text x="50" y="155" fill="#64748b" font-size="7.5" text-anchor="middle">2022.H1</text>
+          <text x="130" y="155" fill="#64748b" font-size="7.5" text-anchor="middle">2022.H2</text>
+          <text x="210" y="155" fill="#64748b" font-size="7.5" text-anchor="middle">2023</text>
+          <text x="290" y="155" fill="#64748b" font-size="7.5" text-anchor="middle">2024</text>
+          <text x="350" y="155" fill="#64748b" font-size="7.5" text-anchor="middle">2025</text>
+        </svg>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#f0b90b"></span> 전기료-BTC 관계 메커니즘</div>
+        <div class="card-sub">전기료 변화가 가격에 미치는 경로</div>
+        <div style="font-size: 12px; line-height: 1.8; color: var(--muted);">
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;padding:10px;background:rgba(240,185,11,0.06);border-radius:8px;border-left:3px solid #f0b90b">
+            <span style="color:#f0b90b;font-size:16px;margin-top:-2px">↑</span>
+            <div><strong style="color:#f0b90b">전기료 상승</strong><br>
+            채굴 원가 상승 → 비효율 채굴자 이탈 → 해시레이트 감소 → 공급 감소 → BTC 가격 <strong style="color:#22c55e">상방 압력</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;padding:10px;background:rgba(240,185,11,0.06);border-radius:8px;border-left:3px solid #f0b90b">
+            <span style="color:#ef4444;font-size:16px;margin-top:-2px">↓</span>
+            <div><strong style="color:#ef4444">전기료 하락</strong><br>
+            채굴 진입장벽 낮아짐 → 해시레이트 증가 → 공급 증가 → BTC 가격 <strong style="color:#ef4444">하방 압력</strong></div>
+          </div>
+          <div style="display:flex;align-items:flex-start;gap:8px;padding:10px;background:rgba(59,130,246,0.06);border-radius:8px;border-left:3px solid #3b82f6">
+            <span style="color:#3b82f6;font-size:16px;margin-top:-2px">⚠</span>
+            <div><strong style="color:#3b82f6">비대칭 관계</strong><br>
+            학술 연구 결과: BTC 가격 <em>상승</em> 시 전력 소비는 크게 늘지 않으나, 가격 <em>하락</em> 시 소비가 줄어드는 비선형성 확인</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <div class="insight-title">🔑 핵심 인사이트 — 전기료</div>
+      <p>
+        <strong>2025년 기준</strong>, 전 세계 BTC 채굴 전력 소비는 연간 <strong>175+ TWh</strong> (폴란드 전체 소비량에 맞먹음). 
+        채굴 BTC 1개당 전기 비용은 미국 평균 <strong>$0.13/kWh 기준 약 $111,072</strong>이며, BTC 시세($100K 근방)와의 마진이 극히 좁음.
+        반감기(2024.04) 이후 블록 보상이 <strong>6.25→3.125 BTC</strong>로 감소해 손익분기 전기단가는 약 <strong>$0.07/kWh</strong>으로 하락. 
+        텍사스 대형 채굴장은 <strong>$0.03/kWh</strong> 이하의 재생에너지 활용으로 경쟁 우위 유지.
+        전기료는 채굴 원가 = BTC의 '내재 가치 하한선'으로 장기 가격을 지지하는 역할을 하며, 상관계수는 약 <strong>+0.55</strong>.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 2: 미국 금리 ===== -->
+  <div class="section" id="sec2">
+    <div class="card fade-in">
+      <div class="card-title"><span class="dot" style="background:#ef4444;box-shadow:0 0 8px #ef4444"></span> 미국 기준금리와 비트코인 — 역상관 관계</div>
+      <div class="card-sub">Fed 금리와 BTC 가격은 강한 역(負)의 상관관계를 보입니다. 상관계수 약 −0.72 (2019~2025)</div>
+      
+      <!-- Timeline chart: Fed rate vs BTC -->
+      <svg viewBox="0 0 680 200" width="100%">
+        <defs>
+          <linearGradient id="rateGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ef4444" stop-opacity="0.2"/>
+            <stop offset="100%" stop-color="#ef4444" stop-opacity="0"/>
+          </linearGradient>
+          <linearGradient id="btcGrad2" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#f7931a" stop-opacity="0.15"/>
+            <stop offset="100%" stop-color="#f7931a" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <!-- Grid -->
+        <line x1="60" y1="20" x2="660" y2="20" stroke="#1e2d45" stroke-width="0.5"/>
+        <line x1="60" y1="65" x2="660" y2="65" stroke="#1e2d45" stroke-width="0.5"/>
+        <line x1="60" y1="110" x2="660" y2="110" stroke="#1e2d45" stroke-width="0.5"/>
+        <line x1="60" y1="155" x2="660" y2="155" stroke="#1e2d45" stroke-width="0.5"/>
+        <line x1="60" y1="185" x2="660" y2="185" stroke="#1e2d45" stroke-width="0.5"/>
+        
+        <!-- Left Y axis (BTC price) -->
+        <text x="55" y="23" fill="#f7931a" font-size="7" text-anchor="end">$80K</text>
+        <text x="55" y="68" fill="#f7931a" font-size="7" text-anchor="end">$60K</text>
+        <text x="55" y="113" fill="#f7931a" font-size="7" text-anchor="end">$40K</text>
+        <text x="55" y="158" fill="#f7931a" font-size="7" text-anchor="end">$20K</text>
+        <text x="55" y="188" fill="#f7931a" font-size="7" text-anchor="end">$0</text>
+        
+        <!-- Right Y axis (Rate) -->
+        <text x="670" y="23" fill="#ef4444" font-size="7" text-anchor="start">6%</text>
+        <text x="670" y="68" fill="#ef4444" font-size="7" text-anchor="start">4%</text>
+        <text x="670" y="113" fill="#ef4444" font-size="7" text-anchor="start">2%</text>
+        <text x="670" y="158" fill="#ef4444" font-size="7" text-anchor="start">0.5%</text>
+        <text x="670" y="188" fill="#ef4444" font-size="7" text-anchor="start">0%</text>
+        
+        <!-- BTC price area (2019-2025) -->
+        <!-- COVID 저점, 2021 ATH, 2022 폭락, 2023 회복, 2024 랠리 -->
+        <path d="M80,165 L110,160 L130,145 L150,130 L165,170 L185,120 L200,55 L215,100 L230,140 L250,160 L270,150 L290,120 L310,100 L330,95 L350,90 L370,105 L390,100 L410,70 L430,55 L450,40 L470,45 L490,50 L510,55 L530,62 L550,58 L580,65 L600,60 L630,55 L650,58 L650,185 L80,185 Z" fill="url(#btcGrad2)"/>
+        <path d="M80,165 L110,160 L130,145 L150,130 L165,170 L185,120 L200,55 L215,100 L230,140 L250,160 L270,150 L290,120 L310,100 L330,95 L350,90 L370,105 L390,100 L410,70 L430,55 L450,40 L470,45 L490,50 L510,55 L530,62 L550,58 L580,65 L600,60 L630,55 L650,58" fill="none" stroke="#f7931a" stroke-width="2"/>
+        
+        <!-- Fed rate area (0~5.5%) -->
+        <path d="M80,183 L130,183 L145,183 L160,183 L170,183 L200,183 L230,182 L250,185 L270,182 L290,130 L310,80 L330,50 L350,32 L370,30 L390,30 L410,30 L430,30 L450,30 L470,42 L490,55 L510,68 L530,80 L550,90 L580,95 L600,98 L630,100 L650,100 L650,185 L80,185 Z" fill="url(#rateGrad)"/>
+        <path d="M80,183 L130,183 L145,183 L160,183 L170,183 L200,183 L230,182 L250,185 L270,182 L290,130 L310,80 L330,50 L350,32 L370,30 L390,30 L410,30 L430,30 L450,30 L470,42 L490,55 L510,68 L530,80 L550,90 L580,95 L600,98 L630,100 L650,100" fill="none" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,2"/>
+        
+        <!-- Event labels -->
+        <line x1="165" y1="20" x2="165" y2="185" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.3"/>
+        <text x="165" y="16" fill="#94a3b8" font-size="6.5" text-anchor="middle">COVID</text>
+        
+        <line x1="200" y1="20" x2="200" y2="185" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.3"/>
+        <text x="200" y="16" fill="#22c55e" font-size="6.5" text-anchor="middle">QE 절정</text>
+        
+        <line x1="290" y1="20" x2="290" y2="185" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.3"/>
+        <text x="290" y="16" fill="#ef4444" font-size="6.5" text-anchor="middle">금리 인상↑</text>
+        
+        <line x1="450" y1="20" x2="450" y2="185" stroke="#ffffff" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.3"/>
+        <text x="450" y="16" fill="#3b82f6" font-size="6.5" text-anchor="middle">금리 인하↓</text>
+        
+        <!-- X labels -->
+        <text x="80" y="197" fill="#64748b" font-size="7" text-anchor="middle">2019</text>
+        <text x="175" y="197" fill="#64748b" font-size="7" text-anchor="middle">2020</text>
+        <text x="250" y="197" fill="#64748b" font-size="7" text-anchor="middle">2021</text>
+        <text x="330" y="197" fill="#64748b" font-size="7" text-anchor="middle">2022</text>
+        <text x="410" y="197" fill="#64748b" font-size="7" text-anchor="middle">2023</text>
+        <text x="490" y="197" fill="#64748b" font-size="7" text-anchor="middle">2024</text>
+        <text x="600" y="197" fill="#64748b" font-size="7" text-anchor="middle">2025</text>
+        
+        <!-- Legend -->
+        <line x1="80" y1="210" x2="105" y2="210" stroke="#f7931a" stroke-width="2"/>
+        <text x="108" y="213" fill="#f7931a" font-size="8">BTC 가격</text>
+        <line x1="170" y1="210" x2="195" y2="210" stroke="#ef4444" stroke-width="2" stroke-dasharray="5,2"/>
+        <text x="198" y="213" fill="#ef4444" font-size="8">Fed 기준금리</text>
+      </svg>
+    </div>
+
+    <div class="grid2">
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#ef4444"></span> 금리 사이클별 BTC 성과</div>
+        <div class="card-sub">금리 정책 변화 시기 BTC 가격 반응</div>
+        <table class="stbl">
+          <tr>
+            <th>시기</th><th>금리 변화</th><th>BTC 반응</th><th>강도</th>
+          </tr>
+          <tr>
+            <td>2020.03</td>
+            <td style="color:#22c55e">0%대로 급인하</td>
+            <td style="color:#22c55e">$5K → $69K<br><small style="color:#64748b">(+1,280%)</small></td>
+            <td><span class="badge badge-strong">매우 강</span></td>
+          </tr>
+          <tr>
+            <td>2022.03~</td>
+            <td style="color:#ef4444">0%→5.5% 급인상</td>
+            <td style="color:#ef4444">$47K → $16K<br><small style="color:#64748b">(−66%)</small></td>
+            <td><span class="badge badge-inverse">강한 하락</span></td>
+          </tr>
+          <tr>
+            <td>2023 중반</td>
+            <td style="color:#f7931a">동결 신호</td>
+            <td style="color:#22c55e">$16K → $30K<br><small style="color:#64748b">(+88%)</small></td>
+            <td><span class="badge badge-moderate">중간</span></td>
+          </tr>
+          <tr>
+            <td>2024.09</td>
+            <td style="color:#3b82f6">50bp 인하 시작</td>
+            <td style="color:#22c55e">$60K → $100K+<br><small style="color:#64748b">(+60%+)</small></td>
+            <td><span class="badge badge-strong">강함</span></td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-title"><span class="dot" style="background:#ef4444"></span> 금리-BTC 연동 메커니즘</div>
+        <div class="card-sub">금리 상승이 BTC에 부정적인 이유</div>
+        <div style="font-size: 12px;">
+          <div style="padding: 10px; background: rgba(239,68,68,0.06); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #ef4444;">
+            <strong style="color:#ef4444">① 기회비용 상승</strong>
+            <p style="color:var(--muted);margin-top:4px;line-height:1.6;">금리↑ → 채권·예금 수익률↑ → BTC 같은 무이자 자산의 매력 상대적 감소</p>
+          </div>
+          <div style="padding: 10px; background: rgba(239,68,68,0.06); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #ef4444;">
+            <strong style="color:#ef4444">② 유동성 축소</strong>
+            <p style="color:var(--muted);margin-top:4px;line-height:1.6;">QT(양적긴축) → 시장 유동성 감소 → 리스크 자산 전반 하락 압력</p>
+          </div>
+          <div style="padding: 10px; background: rgba(239,68,68,0.06); border-radius: 8px; margin-bottom: 10px; border-left: 3px solid #ef4444;">
+            <strong style="color:#ef4444">③ 달러 강세</strong>
+            <p style="color:var(--muted);margin-top:4px;line-height:1.6;">금리↑ → DXY↑ → 위험자산(BTC) 회피 심리 강화</p>
+          </div>
+          <div style="padding: 10px; background: rgba(59,130,246,0.06); border-radius: 8px; border-left: 3px solid #3b82f6;">
+            <strong style="color:#3b82f6">④ 실질금리가 핵심</strong>
+            <p style="color:var(--muted);margin-top:4px;line-height:1.6;">실질금리(명목금리-인플레이션) 하락 시 BTC 상승 가장 강력. 실질금리와 BTC는 반비례.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="insight">
+      <div class="insight-title">🔑 핵심 인사이트 — 미국 금리</div>
+      <p>
+        금리는 4대 요인 중 <strong>가장 강력한 역(−) 상관인자</strong>. 2022년 Fed가 <strong>0%→5.5%</strong>로 급격히 올리자 BTC는 <strong>−66%</strong> 폭락.
+        반면 2020년 제로금리+QE 환경에서 BTC는 <strong>+1,280%</strong> 급등.
+        중요한 것은 <strong>실제 금리 변화보다 '기대(Expectation)'</strong>에 시장이 먼저 반응한다는 점.
+        2021년 말 금리인상 '시사' 발언만으로도 BTC는 정점($69K)을 찍고 하락 시작.
+        2025년 현재 Fed의 <strong>6차례 연속 인하</strong>가 진행 중이며, 이는 BTC에 긍정적 환경.
+        단, 경기침체 우려로 인한 인하라면 오히려 위험자산 회피로 하락할 수 있어 맥락이 중요.
+      </p>
+    </div>
+  </div>
+
+  <!-- ===== SECTION 3: 반감기 ===== -->
+  <div class="section" id="sec3">
+    
