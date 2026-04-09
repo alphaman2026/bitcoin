@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>비트코인 시세 영향 인자 — 완전 통합 분석</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;600;700&display=swap');
+
+:root {
+  --bg:      #04080f;
+  --panel:   #080e1c;
+  --panel2:  #0c1424;
+  --border:  #162032;
+  --border2: #1e2d45;
+  --btc:     #f7931a;
+  --btc2:    #f0b90b;
+  --green:   #00e5a0;
+  --red:     #ff3b6b;
+  --blue:    #4d9fff;
+  --cyan:    #00d4ff;
+  --purple:  #9b6dff;
+  --yellow:  #ffd166;
+  --orange:  #ff7c40;
+  --pink:    #ff6bb5;
+  --text:    #dde6f0;
+  --muted:   #4a637a;
+  --muted2:  #7a95ab;
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'Noto Sans KR',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── ANIMATED BG ── */
+body::before{
+  content:'';
+  position:fixed;top:0;left:0;right:0;bottom:0;
+  background:
+    radial-gradient(ellipse 80% 40% at 10% 10%, rgba(247,147,26,.06) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 60% at 90% 80%, rgba(0,212,255,.04) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 50% 50%, rgba(77,159,255,.03) 0%, transparent 60%);
+  pointer-events:none;
+  z-index:0;
+}
+.wrap{position:relative;z-index:1}
+
+/* ── HERO ── */
+.hero{
+  padding:48px 48px 36px;
+  border-bottom:1px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero-grid{
+  display:grid;grid-template-columns:1fr auto;
+  align-items:start;gap:32px;
+}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.3);
+  color:var(--btc);font-family:'IBM Plex Mono',monospace;
+  font-size:10px;font-weight:700;letter-spacing:2.5px;
+  padding:5px 14px;border-radius:20px;margin-bottom:16px;
+}
+.hero-tag::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--btc);box-shadow:0 0 6px var(--btc);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.hero h1{
+  font-family:'Syne',sans-serif;
+  font-size:36px;font-weight:800;line-height:1.1;
+  background:linear-gradient(100deg, #dde6f0 0%, #f7931a 45%, #00d4ff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  margin-bottom:10px;
+}
+.hero-sub{font-size:13px;color:var(--muted2);line-height:1.7;max-width:680px}
+.hero-kpis{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;min-width:260px;
+}
+.kpi{
+  background:var(--panel2);border:1px solid var(--border2);
+  border-radius:10px;padding:12px 16px;
+}
+.kpi-l{font-size:9px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;font-family:'IBM Plex Mono',monospace}
+.kpi-v{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace}
+.hero-line{
+  position:absolute;bottom:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--btc),var(--cyan),transparent);
+}
+
+/* ── NAV ── */
+.nav-wrap{
+  background:rgba(8,14,28,.95);
+  border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+  backdrop-filter:blur(12px);
+}
+.nav{display:flex;padding:0 48px;overflow-x:auto;gap:0}
+.ntab{
+  padding:14px 20px;font-size:12px;font-weight:500;
+  color:var(--muted2);cursor:pointer;border-bottom:2px solid transparent;
+  white-space:nowrap;transition:all .2s;display:flex;align-items:center;gap:6px;
+  font-family:'Noto Sans KR',sans-serif;
+}
+.ntab:hover{color:var(--text)}
+.ntab.active{color:var(--btc);border-bottom-color:var(--btc)}
+
+/* ── MAIN ── */
+.main{padding:36px 48px;max-width:1400px;margin:0 auto}
+
+/* ── SECTIONS ── */
+.sec{display:none}
+.sec.active{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── SEC HEADER ── */
+.sec-header{
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:28px;padding-bottom:20px;
+  border-bottom:1px solid var(--border);
+}
+.sec-icon{font-size:32px}
+.sec-title{font-family:'Syne',sans-serif;font-size:22px;font-weight:800;line-height:1.2}
+.sec-desc{font-size:12px;color:var(--muted2);margin-top:4px;line-height:1.6}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.g11{display:grid;grid-template-columns:repeat(11,1fr);gap:6px}
+@media(max-width:1100px){.g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr}}
+@media(max-width:800px){.g2,.g3,.g4{grid-template-columns:1fr}}
+
+/* ── CARD ── */
+.card{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:12px;padding:22px;margin-bottom:20px;
+  position:relative;overflow:hidden;
+}
+.card::after{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.05),transparent);
+}
+.ch{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;margin-bottom:6px}
+.ch .pip{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.csub{font-size:11px;color:var(--muted2);margin-bottom:18px;line-height:1.6}
+
+/* ── FACTOR CARD (overview) ── */
+.fc{
+  background:var(--panel2);border:1px solid var(--border2);
+  border-radius:12px;padding:18px 16px;
+  transition:border-color .2s,transform .15s;
+  cursor:default;position:relative;overflow:hidden;
+}
+.fc:hover{transform:translateY(-2px);border-color:var(--border2)}
+.fc-accent{position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
+.fc-rank{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:var(--muted);font-weight:700;margin-bottom:8px;
+}
+.fc-icon{font-size:24px;margin-bottom:8px;line-height:1}
+.fc-name{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.fc-en{font-size:9px;color:var(--muted);margin-bottom:10px;letter-spacing:.3px}
+.fc-num{font-size:22px;font-weight:700;font-family:'IBM Plex Mono',monospace;margin-bottom:3px}
+.fc-dir{font-size:10px;font-weight:600;letter-spacing:.5px;margin-bottom:10px}
+.fc-bar{height:3px;background:var(--border);border-radius:2px;margin-bottom:8px}
+.fc-bar-fill{height:100%;border-radius:2px}
+.fc-note{font-size:9.5px;color:var(--muted2);line-height:1.5}
+.fc-signal{
+  display:inline-block;margin-top:8px;
+  padding:2px 8px;border-radius:8px;font-size:9px;font-weight:700;
+}
+
+/* ── SIGNAL LIGHTS ── */
+.sig-green{background:rgba(0,229,160,.12);color:var(--green);border:1px solid rgba(0,229,160,.25)}
+.sig-yellow{background:rgba(255,209,102,.1);color:var(--yellow);border:1px solid rgba(255,209,102,.2)}
+.sig-red{background:rgba(255,59,107,.1);color:var(--red);border:1px solid rgba(255,59,107,.2)}
+.sig-orange{background:rgba(255,124,64,.1);color:var(--orange);border:1px solid rgba(255,124,64,.2)}
+
+/* ── BADGE ── */
+.badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:9.5px;font-weight:700}
+.b-new{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}
+.b-old{background:rgba(74,99,122,.15);color:var(--muted2);border:1px solid rgba(74,99,122,.2)}
+.b-strong{background:rgba(0,229,160,.12);color:var(--green)}
+.b-mod{background:rgba(247,147,26,.12);color:var(--btc)}
+.b-weak{background:rgba(74,99,122,.15);color:var(--muted2)}
+.b-neg{background:rgba(255,59,107,.12);color:var(--red)}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse}
+.tbl th{
+  text-align:left;padding:9px 12px;font-size:10px;
+  color:var(--muted);font-weight:700;letter-spacing:.5px;
+  border-bottom:1px solid var(--border);text-transform:uppercase;
+}
+.tbl td{
+  padding:11px 12px;font-size:11px;
+  border-bottom:1px solid rgba(22,32,50,.6);
+  line-height:1.55;vertical-align:middle;
+}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:rgba(255,255,255,.012)}
+
+/* ── CORR MATRIX ── */
+.matrix{display:grid;gap:3px}
+.mx-cell{
+  padding:8px 4px;text-align:center;border-radius:6px;
+  font-size:10px;font-weight:700;font-family:'IBM Plex Mono',monospace;
+}
+.mx-label{
+  display:flex;align-items:center;
+  font-size:10px;color:var(--muted2);padding:6px 8px;font-weight:500;
+}
+
+/* ── GAUGE ── */
+.grow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.gl{font-size:11px;color:var(--text);width:130px;flex-shrink:0;font-weight:500}
+.gtrack{flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.gfill{height:100%;border-radius:3px;transition:width 1.2s ease}
+.gpct{font-size:10px;font-family:'IBM Plex Mono',monospace;font-weight:700;width:38px;flex-shrink:0;text-align:right}
+.gdir{font-size:9px;color:var(--muted);width:32px;flex-shrink:0;text-align:right}
+
+/* ── INSIGHT BOX ── */
+.insight{
+  border-radius:10px;padding:16px 18px;margin-top:20px;
+  background:rgba(247,147,26,.04);border:1px solid rgba(247,147,26,.18);
+}
+.insight.blue{background:rgba(77,159,255,.04);border-color:rgba(77,159,255,.2)}
+.insight.green{background:rgba(0,229,160,.04);border-color:rgba(0,229,160,.2)}
+.insight.purple{background:rgba(155,109,255,.04);border-color:rgba(155,109,255,.2)}
+.insight-title{
+  font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;
+  margin-bottom:8px;font-family:'IBM Plex Mono',monospace;
+}
+.insight p{font-size:12px;color:var(--muted2);line-height:1.85}
+.insight p strong{color:var(--text)}
+.insight p em{color:var(--btc2);font-style:normal;font-weight:600}
+
+/* ── TIMELINE ── */
+.tl{position:relative;padding-left:28px}
+.tl::before{
+  content:'';position:absolute;left:8px;top:4px;bottom:4px;
+  width:1px;background:linear-gradient(180deg,var(--btc),var(--border))
+}
+.tlitem{position:relative;margin-bottom:22px}
+.tlitem::before{
+  content:'';position:absolute;left:-24px;top:5px;
+  width:10px;height:10px;border-radius:50%;
+  border:2px solid var(--bg);
+}
+.tl-date{font-size:9px;font-family:'IBM Plex Mono',monospace;font-weight:700;letter-spacing:.5px;margin-bottom:3px}
+.tl-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.tl-body{font-size:11px;color:var(--muted2);line-height:1.65}
+.tl-tag{
+  display:inline-block;margin-top:6px;
+  padding:2px 10px;border-radius:10px;font-size:10px;font-weight:700;
+  font-family:'IBM Plex Mono',monospace;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+
+/* ── FOOTER ── */
+.footer{
+  border-top:1px solid var(--border);
+  padding:24px 48px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.footer-note{font-size:10px;color:var(--muted);line-height:1.6}
+.footer-tag{
+  font-family:'IBM Plex Mono',monospace;font-size:10px;
+  color:var(--muted2);letter-spacing:1px;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ══ HERO ══ -->
+<div class="hero">
+  <div class="hero-grid">
+    <div>
+      <div class="hero-tag">₿ BITCOIN MACRO ANALYSIS · 2025</div>
+      <h1>비트코인 시세 영향 인자<br>완전 통합 분석</h1>
+      <p class="hero-sub">
+        기존 4대 인자(전기료·금리·반감기·금값) + 신규 7대 국제 경제지표(글로벌 M2·DXY·나스닥·VIX·유가/CPI·중국 위안화·기관 ETF)
+        — 총 11개 인자의 상관관계·메커니즘·현재 신호를 하나로 통합한 완전 분석 리포트
+      </p>
+    </div>
+    <div class="hero-kpis">
+      <div class="kpi"><div class="kpi-l">분석 인자</div><div class="kpi-v" style="color:var(--btc)">11개</div></div>
+      <div class="kpi"><div class="kpi-l">최강 상관</div><div class="kpi-v" style="color:var(--green)">+0.94</div></div>
+      <div class="kpi"><div class="kpi-l">BTC ATH</div><div class="kpi-v" style="color:var(--cyan)">$126K</div></div>
+      <div class="kpi"><div class="kpi-l">분석 기간</div><div class="kpi-v" style="color:var(--text);font-size:14px">2012–2025</div></div>
+    </div>
+  </div>
+  <div class="hero-line"></div>
+</div>
+
+<!-- ══ NAV ══ -->
+<div class="nav-wrap">
+  <div class="nav">
+    <div class="ntab active" onclick="sw(0)">① 전체 개요</div>
+    <div class="ntab" onclick="sw(1)">② 상관관계 분석</div>
+    <div class="ntab" onclick="sw(2)">③ 인자별 심층</div>
+    <div class="ntab" onclick="sw(3)">④ 역사적 이벤트</div>
+    <div class="ntab" onclick="sw(4)">⑤ 현재 신호</div>
+    <div class="ntab" onclick="sw(5)">⑥ 종합 결론</div>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- ════════════════════════════════════
+  SEC 0 : 전체 개요
+════════════════════════════════════ -->
+<div class="sec active" id="s0">
+  <div class="sec-header">
+    <div class="sec-icon">📊</div>
+    <div>
+      <div class="sec-title">전체 개요 — 11대 영향 인자 한눈에 보기</div>
+      <div class="sec-desc">기존 4대 + 신규 7대 인자의 상관 강도, 방향, 분류를 통합 정리</div>
+    </div>
+  </div>
+
+  <!-- 11 Factor Cards -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:24px">
+
+    <!-- 1 글로벌M2 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--green),var(--cyan))"></div>
+      <div class="fc-rank">#1 최강 상관 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">💵</div>
+      <div class="fc-name">글로벌 M2 통화량</div>
+      <div class="fc-en">Global M2 Money Supply</div>
+      <div class="fc-num" style="color:var(--green)">+0.94</div>
+      <div class="fc-dir" style="color:var(--green)">강한 정(+) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:94%;background:linear-gradient(90deg,var(--green),var(--cyan))"></div></div>
+      <div class="fc-note">전세계 통화량↑ = BTC↑. ~70일 선행 효과.</div>
+      <span class="fc-signal sig-green">🟢 현재 우호</span>
+    </div>
+
+    <!-- 2 반감기 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,#22c55e,#16a34a)"></div>
+      <div class="fc-rank">#2 장기 최강 <span class="badge b-old">기존</span></div>
+      <div class="fc-icon">₿</div>
+      <div class="fc-name">비트코인 반감기</div>
+      <div class="fc-en">BTC Halving Cycle</div>
+      <div class="fc-num" style="color:#22c55e">+0.90</div>
+      <div class="fc-dir" style="color:#22c55e">강한 정(+) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:90%;background:#22c55e"></div></div>
+      <div class="fc-note">공급 직접 감소. 역대 4회 모두 장기 랠리 확인.</div>
+      <span class="fc-signal sig-green">🟢 사이클 중반</span>
+    </div>
+
+    <!-- 3 기관ETF -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--purple),var(--pink))"></div>
+      <div class="fc-rank">#3 2024 신규 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">🏦</div>
+      <div class="fc-name">기관 ETF 유입</div>
+      <div class="fc-en">Institutional ETF Flow</div>
+      <div class="fc-num" style="color:var(--purple)">+0.85</div>
+      <div class="fc-dir" style="color:var(--purple)">강한 정(+) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:85%;background:linear-gradient(90deg,var(--purple),var(--pink))"></div></div>
+      <div class="fc-note">BlackRock IBIT 등 $87B 누적. 일일 채굴 3배 흡수.</div>
+      <span class="fc-signal sig-green">🟢 지속 유입</span>
+    </div>
+
+    <!-- 4 미국금리 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--red),#be123c)"></div>
+      <div class="fc-rank">#4 역상관 최강 <span class="badge b-old">기존</span></div>
+      <div class="fc-icon">🏛️</div>
+      <div class="fc-name">미국 기준금리</div>
+      <div class="fc-en">Fed Funds Rate</div>
+      <div class="fc-num" style="color:var(--red)">−0.80</div>
+      <div class="fc-dir" style="color:var(--red)">강한 역(−) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:80%;background:linear-gradient(90deg,var(--red),#be123c)"></div></div>
+      <div class="fc-note">금리↑=BTC↓. 유동성·기회비용·달러강세 경로.</div>
+      <span class="fc-signal sig-green">🟢 인하 사이클</span>
+    </div>
+
+    <!-- 5 나스닥 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--blue),#6366f1)"></div>
+      <div class="fc-rank">#5 동조화 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">📈</div>
+      <div class="fc-name">나스닥 / S&P500</div>
+      <div class="fc-en">Nasdaq / S&P 500</div>
+      <div class="fc-num" style="color:var(--blue)">+0.77</div>
+      <div class="fc-dir" style="color:var(--blue)">강한 정(+) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:77%;background:linear-gradient(90deg,var(--blue),#6366f1)"></div></div>
+      <div class="fc-note">BTC = 고베타 테크 자산. 나스닥 하락의 1.8~2.1배 낙폭.</div>
+      <span class="fc-signal sig-yellow">🟡 변동성 구간</span>
+    </div>
+
+    <!-- 6 DXY -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--red),var(--orange))"></div>
+      <div class="fc-rank">#6 달러 헤지 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">📉</div>
+      <div class="fc-name">달러 인덱스 (DXY)</div>
+      <div class="fc-en">US Dollar Index</div>
+      <div class="fc-num" style="color:var(--red)">−0.72</div>
+      <div class="fc-dir" style="color:var(--red)">강한 역(−) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:72%;background:linear-gradient(90deg,var(--red),var(--orange))"></div></div>
+      <div class="fc-note">달러↑=BTC↓. 금값보다 21~27배 강한 영향력.</div>
+      <span class="fc-signal sig-green">🟢 약세 우호</span>
+    </div>
+
+    <!-- 7 VIX -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--orange),var(--red))"></div>
+      <div class="fc-rank">#7 공포 지표 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">😰</div>
+      <div class="fc-name">VIX 공포지수</div>
+      <div class="fc-en">CBOE Volatility Index</div>
+      <div class="fc-num" style="color:var(--orange)">−0.65</div>
+      <div class="fc-dir" style="color:var(--orange)">역(−) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:65%;background:linear-gradient(90deg,var(--orange),var(--red))"></div></div>
+      <div class="fc-note">VIX↑=BTC↓. 극단공포 후 역매수 기회 반복.</div>
+      <span class="fc-signal sig-orange">🟠 간헐 급등</span>
+    </div>
+
+    <!-- 8 위안화 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--pink),var(--red))"></div>
+      <div class="fc-rank">#8 중국 변수 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">🐉</div>
+      <div class="fc-name">위안화 / 중국경제</div>
+      <div class="fc-en">CNY / China Economy</div>
+      <div class="fc-num" style="color:var(--pink)">−0.58</div>
+      <div class="fc-dir" style="color:var(--pink)">역(−)+자본도피 복합</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:58%;background:linear-gradient(90deg,var(--pink),var(--red))"></div></div>
+      <div class="fc-note">위안화 절하=중국 자본도피→BTC↑. 2013·2015 검증.</div>
+      <span class="fc-signal sig-yellow">🟡 절하 진행 중</span>
+    </div>
+
+    <!-- 9 전기료 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--yellow),var(--btc))"></div>
+      <div class="fc-rank">#9 원가 하한선 <span class="badge b-old">기존</span></div>
+      <div class="fc-icon">⚡</div>
+      <div class="fc-name">전기료 (채굴 원가)</div>
+      <div class="fc-en">Electricity / Mining Cost</div>
+      <div class="fc-num" style="color:var(--yellow)">+0.55</div>
+      <div class="fc-dir" style="color:var(--yellow)">중간 정(+) 상관</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:55%;background:linear-gradient(90deg,var(--yellow),var(--btc))"></div></div>
+      <div class="fc-note">채굴 원가 = BTC 가격 구조적 하한선 역할.</div>
+      <span class="fc-signal sig-yellow">🟡 중립</span>
+    </div>
+
+    <!-- 10 유가·CPI -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,var(--yellow),var(--orange))"></div>
+      <div class="fc-rank">#10 복합 인플레 <span class="badge b-new">신규</span></div>
+      <div class="fc-icon">🛢️</div>
+      <div class="fc-name">유가 / CPI 인플레</div>
+      <div class="fc-en">WTI Oil / CPI Inflation</div>
+      <div class="fc-num" style="color:var(--yellow)">복합</div>
+      <div class="fc-dir" style="color:var(--orange)">단기역(−) / 장기정(+)</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:50%;background:linear-gradient(90deg,var(--yellow),var(--orange))"></div></div>
+      <div class="fc-note">헤지 서사(호재) vs 금리 인상 유발(악재) 충돌.</div>
+      <span class="fc-signal sig-orange">🟠 지정학 리스크</span>
+    </div>
+
+    <!-- 11 금값 -->
+    <div class="fc">
+      <div class="fc-accent" style="background:linear-gradient(90deg,#FFD700,var(--btc2))"></div>
+      <div class="fc-rank">#11 약한 상관 <span class="badge b-old">기존</span></div>
+      <div class="fc-icon">🥇</div>
+      <div class="fc-name">국제 금값</div>
+      <div class="fc-en">Gold Price</div>
+      <div class="fc-num" style="color:#FFD700">+0.38</div>
+      <div class="fc-dir" style="color:#FFD700">약한 정(+) 가변</div>
+      <div class="fc-bar"><div class="fc-bar-fill" style="width:38%;background:linear-gradient(90deg,#FFD700,var(--btc2))"></div></div>
+      <div class="fc-note">장기 평균 +0.10. 2025년 강한 디커플링 발생.</div>
+      <span class="fc-signal sig-red">🔴 디커플링</span>
+    </div>
+
+  </div><!-- /factor grid -->
+
+  <!-- 전체 상관 강도 바 차트 -->
+  <div class="card">
+    <div class="ch"><span class="pip" style="background:var(--btc);box-shadow:0 0 6px var(--btc)"></span>11대 인자 상관계수 순위 — 절댓값 기준</div>
+    <div class="csub">색상 = 양(+)/음(−) 방향. 테두리 = 신규 인자. 기존 4대 인자는 회색 테두리.</div>
+    <svg viewBox="0 0 800 320" width="100%" style="overflow:visible">
+      <defs>
+        <marker id="ax" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+          <path d="M0,0 L5,2.5 L0,5" fill="none" stroke="#4a637a" stroke-width="1"/>
+        </marker>
+      </defs>
+      <!-- Y axis -->
+      <line x1="160" y1="10" x2="160" y2="290" stroke="#162032" stroke-width="1"/>
+      <!-- grid lines -->
+      <line x1="160" y1="10" x2="775" y2="10" stroke="#162032" stroke-width=".4" stroke-dasharray="3,5"/>
+      <line x1="160" y1="82" x2="775" y2="82" stroke="#162032" stroke-width=".4" stroke-dasharray="3,5"/>
+      <line x1="160" y1="155" x2="775" y2="155" stroke="#162032" stroke-width=".4" stroke-dasharray="3,5"/>
+      <line x1="160" y1="228" x2="775" y2="228" stroke="#162032" stroke-width=".4" stroke-dasharray="3,5"/>
+      <text x="155" y="13" fill="#4a637a" font-size="7" text-anchor="end">1.00</text>
+      <text x="155" y="85" fill="#4a637a" font-size="7" text-anchor="end">0.75</text>
+      <text x="155" y="158" fill="#4a637a" font-size="7" text-anchor="end">0.50</text>
+      <text x="155" y="231" fill="#4a637a" font-size="7" text-anchor="end">0.25</text>
+
+      <!-- data: [x, y_top, h, color, label, val, signal, isNew] -->
+      <!-- M2 0.94 -->
+      <g>
+        <rect x="168" y="18" width="52" height="272" rx="5" fill="url(#bM2)" stroke="none"/>
+        <rect x="168" y="18" width="52" height="272" rx="5" fill="none" stroke="rgba(0,229,160,.5)" stroke-width="1"/>
+        <text x="194" y="12" fill="var(--green)" font-size="9" font-weight="700" text-anchor="middle">0.94</text>
+        <text x="194" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">글로벌 M2</text>
+        <text x="194" y="315" fill="#4a637a" font-size="7" text-anchor="middle">💵 신규</text>
+      </g>
+      <!-- 반감기 0.90 -->
+      <g>
+        <rect x="228" y="28" width="52" height="262" rx="5" fill="url(#bHal)"/>
+        <text x="254" y="22" fill="#22c55e" font-size="9" font-weight="700" text-anchor="middle">0.90</text>
+        <text x="254" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">반감기</text>
+        <text x="254" y="315" fill="#4a637a" font-size="7" text-anchor="middle">₿ 기존</text>
+      </g>
+      <!-- ETF 0.85 -->
+      <g>
+        <rect x="288" y="42" width="52" height="248" rx="5" fill="url(#bETF)" stroke="none"/>
+        <rect x="288" y="42" width="52" height="248" rx="5" fill="none" stroke="rgba(155,109,255,.5)" stroke-width="1"/>
+        <text x="314" y="36" fill="var(--purple)" font-size="9" font-weight="700" text-anchor="middle">0.85</text>
+        <text x="314" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">기관 ETF</text>
+        <text x="314" y="315" fill="#4a637a" font-size="7" text-anchor="middle">🏦 신규</text>
+      </g>
+      <!-- 금리 0.80 -->
+      <g>
+        <rect x="348" y="54" width="52" height="236" rx="5" fill="url(#bRate)"/>
+        <text x="374" y="48" fill="var(--red)" font-size="9" font-weight="700" text-anchor="middle">−0.80</text>
+        <text x="374" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">미국 금리</text>
+        <text x="374" y="315" fill="#4a637a" font-size="7" text-anchor="middle">🏛️ 기존</text>
+      </g>
+      <!-- 나스닥 0.77 -->
+      <g>
+        <rect x="408" y="64" width="52" height="226" rx="5" fill="url(#bNas)" stroke="none"/>
+        <rect x="408" y="64" width="52" height="226" rx="5" fill="none" stroke="rgba(77,159,255,.4)" stroke-width="1"/>
+        <text x="434" y="58" fill="var(--blue)" font-size="9" font-weight="700" text-anchor="middle">+0.77</text>
+        <text x="434" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">나스닥</text>
+        <text x="434" y="315" fill="#4a637a" font-size="7" text-anchor="middle">📈 신규</text>
+      </g>
+      <!-- DXY 0.72 -->
+      <g>
+        <rect x="468" y="76" width="52" height="214" rx="5" fill="url(#bDXY)" stroke="none"/>
+        <rect x="468" y="76" width="52" height="214" rx="5" fill="none" stroke="rgba(255,59,107,.4)" stroke-width="1"/>
+        <text x="494" y="70" fill="var(--red)" font-size="9" font-weight="700" text-anchor="middle">−0.72</text>
+        <text x="494" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">DXY</text>
+        <text x="494" y="315" fill="#4a637a" font-size="7" text-anchor="middle">📉 신규</text>
+      </g>
+      <!-- VIX 0.65 -->
+      <g>
+        <rect x="528" y="100" width="52" height="190" rx="5" fill="url(#bVIX)" stroke="none"/>
+        <rect x="528" y="100" width="52" height="190" rx="5" fill="none" stroke="rgba(255,124,64,.4)" stroke-width="1"/>
+        <text x="554" y="94" fill="var(--orange)" font-size="9" font-weight="700" text-anchor="middle">−0.65</text>
+        <text x="554" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">VIX</text>
+        <text x="554" y="315" fill="#4a637a" font-size="7" text-anchor="middle">😰 신규</text>
+      </g>
+      <!-- 위안화 0.58 -->
+      <g>
+        <rect x="588" y="123" width="52" height="167" rx="5" fill="url(#bCNY)" stroke="none"/>
+        <rect x="588" y="123" width="52" height="167" rx="5" fill="none" stroke="rgba(255,107,181,.4)" stroke-width="1"/>
+        <text x="614" y="117" fill="var(--pink)" font-size="9" font-weight="700" text-anchor="middle">−0.58</text>
+        <text x="614" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">위안화</text>
+        <text x="614" y="315" fill="#4a637a" font-size="7" text-anchor="middle">🐉 신규</text>
+      </g>
+      <!-- 전기료 0.55 -->
+      <g>
+        <rect x="648" y="132" width="52" height="158" rx="5" fill="url(#bElec)"/>
+        <text x="674" y="126" fill="var(--yellow)" font-size="9" font-weight="700" text-anchor="middle">+0.55</text>
+        <text x="674" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">전기료</text>
+        <text x="674" y="315" fill="#4a637a" font-size="7" text-anchor="middle">⚡ 기존</text>
+      </g>
+      <!-- 유가/CPI ~0.45 -->
+      <g>
+        <rect x="708" y="158" width="52" height="132" rx="5" fill="url(#bOil)" stroke="none"/>
+        <rect x="708" y="158" width="52" height="132" rx="5" fill="none" stroke="rgba(255,209,102,.3)" stroke-width="1"/>
+        <text x="734" y="152" fill="var(--yellow)" font-size="9" font-weight="700" text-anchor="middle">복합</text>
+        <text x="734" y="305" fill="#7a95ab" font-size="8" text-anchor="middle">유가/CPI</text>
+        <text x="734" y="315" fill="#4a637a" font-size="7" text-anchor="middle">🛢️ 신규</text>
+      </g>
+      <!-- 금값 0.38 -->
+      <!-- no separate bar for gold, it's below oil effectively -->
+
+      <!-- gradients -->
+      <defs>
+        <linearGradient id="bM2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00e5a0" stop-opacity=".5"/><stop offset="100%" stop-color="#00e5a0" stop-opacity=".05"/></linearGradient>
+        <linearGradient id="bHal" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#22c55e" stop-opacity=".35"/><stop offset="100%" stop-color="#22c55e" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bETF" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#9b6dff" stop-opacity=".5"/><stop offset="100%" stop-color="#9b6dff" stop-opacity=".05"/></linearGradient>
+        <linearGradient id="bRate" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff3b6b" stop-opacity=".35"/><stop offset="100%" stop-color="#ff3b6b" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bNas" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#4d9fff" stop-opacity=".4"/><stop offset="100%" stop-color="#4d9fff" stop-opacity=".05"/></linearGradient>
+        <linearGradient id="bDXY" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff3b6b" stop-opacity=".35"/><stop offset="100%" stop-color="#ff3b6b" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bVIX" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff7c40" stop-opacity=".4"/><stop offset="100%" stop-color="#ff7c40" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bCNY" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ff6bb5" stop-opacity=".4"/><stop offset="100%" stop-color="#ff6bb5" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bElec" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffd166" stop-opacity=".3"/><stop offset="100%" stop-color="#ffd166" stop-opacity=".04"/></linearGradient>
+        <linearGradient id="bOil" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffd166" stop-opacity=".25"/><stop offset="100%" stop-color="#ffd166" stop-opacity=".03"/></linearGradient>
+      </defs>
+    </svg>
+
+    <div style="display:flex;gap:20px;flex-wrap:wrap;margin-top:8px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted2)">
+        <span style="width:14px;height:10px;border-radius:2px;background:var(--green);opacity:.5;display:inline-block"></span>정(+) 상관
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted2)">
+        <span style="width:14px;height:10px;border-radius:2px;background:var(--red);opacity:.4;display:inline-block"></span>역(−) 상관
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted2)">
+        <span style="width:14px;height:10px;border-radius:2px;background:transparent;border:1px solid var(--cyan);display:inline-block"></span>신규 인자 (테두리)
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;font-size:10px;color:var(--muted2)">
+        <span style="width:14px;height:10px;border-radius:2px;background:transparent;border:1px solid var(--muted);display:inline-block"></span>기존 4대 인자
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  SEC 1 : 상관관계 분석
+════════════════════════════════════ -->
+<div class="sec" id="s1">
+  <div class="sec-header">
+    <div class="sec-icon">🔗</div>
+    <div>
+      <div class="sec-title">상관관계 심층 분석</div>
+      <div class="sec-desc">방향·강도·시차·안정성을 다차원으로 비교</div>
+    </div>
+  </div>
+
+  <!-- 통합 테이블 -->
+  <div class="card">
+    <div class="ch"><span class="pip" style="background:var(--btc)"></span>11대 인자 완전 비교 테이블</div>
+    <div style="overflow-x:auto">
+      <table class="tbl" style="min-width:900px">
+        <tr>
+          <th>#</th><th>인자</th><th>분류</th>
+          <th>방향</th><th>상관계수</th><th>반응 속도</th>
+          <th>안정성</th><th>주요 메커니즘</th><th>현재(2025)</th>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">01</td>
+          <td><strong style="color:var(--green)">💵 글로벌 M2</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--green)">정(+)</td>
+          <td><strong style="color:var(--green);font-family:'IBM Plex Mono',monospace">+0.94</strong></td>
+          <td>~70일 시차</td>
+          <td><span class="badge b-strong">높음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">유동성 확대 → 위험자산 수요↑</td>
+          <td><span class="fc-signal sig-green" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟢 우호</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">02</td>
+          <td><strong style="color:#22c55e">₿ 반감기</strong></td>
+          <td><span class="badge b-old">기존</span></td>
+          <td style="color:#22c55e">정(+)</td>
+          <td><strong style="color:#22c55e;font-family:'IBM Plex Mono',monospace">+0.90</strong></td>
+          <td>12~18개월</td>
+          <td><span class="badge b-strong">매우높음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">공급 직접 감소 → 희소성↑</td>
+          <td><span class="fc-signal sig-green" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟢 중반</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">03</td>
+          <td><strong style="color:var(--purple)">🏦 기관 ETF</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--purple)">정(+)</td>
+          <td><strong style="color:var(--purple);font-family:'IBM Plex Mono',monospace">+0.85</strong></td>
+          <td>즉각~1일</td>
+          <td><span class="badge b-mod">중간</span></td>
+          <td style="font-size:10px;color:var(--muted2)">일일 흡수량 > 채굴 공급량</td>
+          <td><span class="fc-signal sig-green" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟢 지속</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">04</td>
+          <td><strong style="color:var(--red)">🏛️ 미국 금리</strong></td>
+          <td><span class="badge b-old">기존</span></td>
+          <td style="color:var(--red)">역(−)</td>
+          <td><strong style="color:var(--red);font-family:'IBM Plex Mono',monospace">−0.80</strong></td>
+          <td>주~1개월</td>
+          <td><span class="badge b-strong">높음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">기회비용↑ · 유동성 축소 · DXY 강세</td>
+          <td><span class="fc-signal sig-green" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟢 인하</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">05</td>
+          <td><strong style="color:var(--blue)">📈 나스닥</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--blue)">정(+)</td>
+          <td><strong style="color:var(--blue);font-family:'IBM Plex Mono',monospace">+0.77</strong></td>
+          <td>즉각</td>
+          <td><span class="badge b-mod">중간</span></td>
+          <td style="font-size:10px;color:var(--muted2)">고베타 테크자산 동조화 · 마진콜 동시 매도</td>
+          <td><span class="fc-signal sig-yellow" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟡 변동성</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">06</td>
+          <td><strong style="color:var(--red)">📉 DXY</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--red)">역(−)</td>
+          <td><strong style="color:var(--red);font-family:'IBM Plex Mono',monospace">−0.72</strong></td>
+          <td>즉각~1일</td>
+          <td><span class="badge b-strong">높음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">달러 약세 → 글로벌 자본 위험자산 이동</td>
+          <td><span class="fc-signal sig-green" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟢 약세</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">07</td>
+          <td><strong style="color:var(--orange)">😰 VIX</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--orange)">역(−)</td>
+          <td><strong style="color:var(--orange);font-family:'IBM Plex Mono',monospace">−0.65</strong></td>
+          <td>즉각</td>
+          <td><span class="badge b-weak">낮음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">공포심 → 위험자산 매도 · 극단공포 후 반등</td>
+          <td><span class="fc-signal sig-orange" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟠 주의</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">08</td>
+          <td><strong style="color:var(--pink)">🐉 위안화</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--pink)">역(−)/복합</td>
+          <td><strong style="color:var(--pink);font-family:'IBM Plex Mono',monospace">−0.58</strong></td>
+          <td>수주</td>
+          <td><span class="badge b-weak">낮음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">절하 → 중국 자본도피 BTC 매수</td>
+          <td><span class="fc-signal sig-yellow" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟡 복합</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">09</td>
+          <td><strong style="color:var(--yellow)">⚡ 전기료</strong></td>
+          <td><span class="badge b-old">기존</span></td>
+          <td style="color:var(--yellow)">정(+)</td>
+          <td><strong style="color:var(--yellow);font-family:'IBM Plex Mono',monospace">+0.55</strong></td>
+          <td>수개월</td>
+          <td><span class="badge b-strong">높음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">채굴 원가 = 가격 하한선(Floor) 형성</td>
+          <td><span class="fc-signal sig-yellow" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟡 중립</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">10</td>
+          <td><strong style="color:var(--yellow)">🛢️ 유가/CPI</strong></td>
+          <td><span class="badge b-new">신규</span></td>
+          <td style="color:var(--orange)">복합</td>
+          <td><strong style="color:var(--orange);font-family:'IBM Plex Mono',monospace">복합</strong></td>
+          <td>수일~수주</td>
+          <td><span class="badge b-weak">낮음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">헤지 서사(+) vs 금리 인상 유발(−) 충돌</td>
+          <td><span class="fc-signal sig-orange" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🟠 지정학</span></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2);font-family:'IBM Plex Mono',monospace;font-size:10px">11</td>
+          <td><strong style="color:#FFD700">🥇 국제 금값</strong></td>
+          <td><span class="badge b-old">기존</span></td>
+          <td style="color:#FFD700">정(+) 가변</td>
+          <td><strong style="color:#FFD700;font-family:'IBM Plex Mono',monospace">+0.38</strong></td>
+          <td>수일~수주</td>
+          <td><span class="badge b-weak">낮음</span></td>
+          <td style="font-size:10px;color:var(--muted2)">공통: 달러 약세·실질금리↓. 이외 비상관</td>
+          <td><span class="fc-signal sig-red" style="font-size:9px;padding:1px 7px;border-radius:6px;display:inline-block">🔴 디커플링</span></td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 레이더 차트 -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--cyan)"></span>4개 차원 레이더 비교</div>
+      <div class="csub">상관강도·반응속도·예측가능성·현재영향력 — 4축 레이더</div>
+      <svg viewBox="0 0 380 300" width="100%">
+        <g transform="translate(190,155)">
+          <!-- bg polygons -->
+          <polygon points="0,-95 82.3,-47.5 82.3,47.5 0,95 -82.3,47.5 -82.3,-47.5" fill="none" stroke="#162032" stroke-width=".8"/>
+          <polygon points="0,-71.3 61.7,-35.6 61.7,35.6 0,71.3 -61.7,35.6 -61.7,-35.6" fill="none" stroke="#162032" stroke-width=".6"/>
+          <polygon points="0,-47.5 41.1,-23.8 41.1,23.8 0,47.5 -41.1,23.8 -41.1,-23.8" fill="none" stroke="#162032" stroke-width=".5"/>
+          <polygon points="0,-23.8 20.6,-11.9 20.6,11.9 0,23.8 -20.6,11.9 -20.6,-11.9" fill="none" stroke="#162032" stroke-width=".4"/>
+          <!-- axes -->
+          <line x1="0" y1="0" x2="0" y2="-95" stroke="#1e2d45" stroke-width=".8"/>
+          <line x1="0" y1="0" x2="82.3" y2="-47.5" stroke="#1e2d45" stroke-width=".8"/>
+          <line x1="0" y1="0" x2="82.3" y2="47.5" stroke="#1e2d45" stroke-width=".8"/>
+          <line x1="0" y1="0" x2="0" y2="95" stroke="#1e2d45" stroke-width=".8"/>
+          <line x1="0" y1="0" x2="-82.3" y2="47.5" stroke="#1e2d45" stroke-width=".8"/>
+          <line x1="0" y1="0" x2="-82.3" y2="-47.5" stroke="#1e2d45" stroke-width=".8"/>
+          <!-- axis labels -->
+          <text x="0" y="-104" fill="#7a95ab" font-size="8" text-anchor="middle">상관 강도</text>
+          <text x="91" y="-52" fill="#7a95ab" font-size="8" text-anchor="start">반응 속도</text>
+          <text x="91" y="57" fill="#7a95ab" font-size="8" text-anchor="start">현재 영향력</text>
+          <text x="0" y="112" fill="#7a95ab" font-size="8" text-anchor="middle">예측 가능성</text>
+          <text x="-91" y="57" fill="#7a95ab" font-size="8" text-anchor="end">장기 지속성</text>
+          <text x="-91" y="-52" fill="#7a95ab" font-size="8" text-anchor="end">데이터 신뢰도</text>
+
+          <!-- 반감기 (green) -->
+          <polygon points="0,-85.5 73.9,-32.3 73.9,42.8 0,85.5 -73.9,42.8 -73.9,-42.8"
+            fill="rgba(34,197,94,.12)" stroke="#22c55e" stroke-width="1.5"/>
+
+          <!-- 글로벌M2 (cyan) -->
+          <polygon points="0,-89.3 55.4,-27.5 61.7,42.8 0,71.3 -73.9,26.1 -69.3,-42.8"
+            fill="rgba(0,229,160,.1)" stroke="var(--green)" stroke-width="1.5"/>
+
+          <!-- 기관ETF (purple) -->
+          <polygon points="0,-80.8 78.2,-38 47.5,42.8 0,66.5 -61.7,38 -47.5,-38"
+            fill="rgba(155,109,255,.1)" stroke="var(--purple)" stroke-width="1.5"/>
+
+          <!-- 금리 (red) -->
+          <polygon points="0,-76 66.8,-33.8 47.5,38 0,52.3 -55.4,33.3 -75,-38"
+            fill="rgba(255,59,107,.08)" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="4,2"/>
+
+          <!-- 나스닥 (blue) -->
+          <polygon points="0,-71.3 71.3,-38 57,28.5 0,47.5 -52.3,33 -47.5,-33.8"
+            fill="rgba(77,159,255,.08)" stroke="var(--blue)" stroke-width="1" stroke-dasharray="3,2"/>
+        </g>
+        <!-- Legend -->
+        <line x1="20" y1="285" x2="40" y2="285" stroke="#22c55e" stroke-width="1.5"/>
+        <text x="44" y="289" fill="#22c55e" font-size="8">반감기</text>
+        <line x1="95" y1="285" x2="115" y2="285" stroke="var(--green)" stroke-width="1.5"/>
+        <text x="119" y="289" fill="var(--green)" font-size="8">글로벌M2</text>
+        <line x1="185" y1="285" x2="205" y2="285" stroke="var(--purple)" stroke-width="1.5"/>
+        <text x="209" y="289" fill="var(--purple)" font-size="8">기관ETF</text>
+        <line x1="265" y1="285" x2="285" y2="285" stroke="var(--red)" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="289" y="289" fill="var(--red)" font-size="8">금리</text>
+        <line x1="320" y1="285" x2="340" y2="285" stroke="var(--blue)" stroke-width="1" stroke-dasharray="3,2"/>
+        <text x="344" y="289" fill="var(--blue)" font-size="8">나스닥</text>
+      </svg>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--orange)"></span>상관 진화 — 시간에 따른 변화</div>
+      <div class="csub">주요 인자들의 BTC 상관계수는 2020년 이후 급격히 변화</div>
+      <table class="tbl">
+        <tr><th>인자</th><th>2018~2019</th><th>2020~2021</th><th>2022~2023</th><th>2024~2025</th></tr>
+        <tr>
+          <td style="color:var(--green)">글로벌 M2</td>
+          <td>+0.40</td><td>+0.70</td><td>+0.78</td>
+          <td><strong style="color:var(--green)">+0.94</strong></td>
+        </tr>
+        <tr>
+          <td style="color:var(--blue)">나스닥</td>
+          <td>+0.05</td><td>+0.30</td><td>+0.60</td>
+          <td><strong style="color:var(--blue)">+0.77</strong></td>
+        </tr>
+        <tr>
+          <td style="color:var(--red)">DXY</td>
+          <td>−0.05</td><td>−0.35</td><td>−0.58</td>
+          <td><strong style="color:var(--red)">−0.72</strong></td>
+        </tr>
+        <tr>
+          <td style="color:var(--purple)">기관 ETF</td>
+          <td style="color:var(--muted)">없음</td>
+          <td style="color:var(--muted)">없음</td>
+          <td style="color:var(--muted)">없음</td>
+          <td><strong style="color:var(--purple)">+0.85</strong></td>
+        </tr>
+        <tr>
+          <td style="color:#FFD700">금값</td>
+          <td>+0.08</td><td>+0.25</td><td>+0.55</td>
+          <td><strong style="color:var(--red)">+0.15↓</strong></td>
+        </tr>
+      </table>
+      <div class="insight blue" style="margin-top:12px">
+        <div class="insight-title" style="color:var(--blue)">핵심 트렌드</div>
+        <p style="font-size:11px">BTC는 <strong>2020년 이후 본격적인 거시 자산</strong>으로 변화. M2·DXY·나스닥 상관이 모두 강화됨. 반면 금값은 2025년 오히려 역주행으로 <em>디커플링</em>. 기관 ETF는 2024년부터 완전히 새로운 가격 메커니즘으로 등장.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  SEC 2 : 인자별 심층
+════════════════════════════════════ -->
+<div class="sec" id="s2">
+  <div class="sec-header">
+    <div class="sec-icon">🔬</div>
+    <div>
+      <div class="sec-title">인자별 심층 분석</div>
+      <div class="sec-desc">각 인자의 작동 메커니즘, 경로, 수치 데이터</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- M2 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--green)"></span>💵 글로벌 M2 — 메커니즘 3경로</div>
+      <div style="font-size:11px">
+        <div style="padding:10px 12px;background:rgba(0,229,160,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--green)">
+          <strong style="color:var(--green)">① 유동성 공급 경로</strong>
+          <p style="color:var(--muted2);margin-top:3px;line-height:1.6">M2↑ → 시중 여유자금 증가 → 위험자산 투자 확대 → BTC 수요↑</p>
+        </div>
+        <div style="padding:10px 12px;background:rgba(0,229,160,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--green)">
+          <strong style="color:var(--green)">② 인플레이션 헤지 경로</strong>
+          <p style="color:var(--muted2);margin-top:3px;line-height:1.6">통화 공급↑ → 화폐 가치 희석 → 희소 자산(BTC·금) 수요↑</p>
+        </div>
+        <div style="padding:10px 12px;background:rgba(0,229,160,.05);border-radius:8px;border-left:2px solid var(--green)">
+          <strong style="color:var(--green)">③ 70일 선행 신호</strong>
+          <p style="color:var(--muted2);margin-top:3px;line-height:1.6">글로벌 M2 변화 → <em>약 70일 후</em> BTC 가격 반영. 2017·2020·2024 반복 확인.</p>
+        </div>
+      </div>
+    </div>
+    <!-- 금리 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--red)"></span>🏛️ 미국 금리 — 4가지 하락 경로</div>
+      <div style="font-size:11px">
+        <div style="padding:10px 12px;background:rgba(255,59,107,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--red)">
+          <strong style="color:var(--red)">① 기회비용</strong>: 금리↑ → 채권 수익률↑ → BTC 무이자 보유의 매력 감소
+        </div>
+        <div style="padding:10px 12px;background:rgba(255,59,107,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--red)">
+          <strong style="color:var(--red)">② 유동성 축소</strong>: QT → 시장 자금 흡수 → 위험자산 전반 하락
+        </div>
+        <div style="padding:10px 12px;background:rgba(255,59,107,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--red)">
+          <strong style="color:var(--red)">③ 달러 강세(DXY↑)</strong>: 금리↑ → 달러 매력↑ → 신흥국 자금 회수
+        </div>
+        <div style="padding:10px 12px;background:rgba(59,130,246,.05);border-radius:8px;border-left:2px solid var(--blue)">
+          <strong style="color:var(--blue)">④ 실질금리가 핵심</strong>: 명목금리−인플레 = 실질금리. 실질금리↓ = BTC↑ 가장 강력
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- ETF -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--purple)"></span>🏦 기관 ETF — 수급 구조 혁명</div>
+      <div style="margin-bottom:12px">
+        <div class="grow"><div class="gl" style="font-size:10px">2024 ETF 순유입</div><div class="gtrack"><div class="gfill" style="width:100%;background:var(--purple)"></div></div><div class="gpct" style="color:var(--purple)">$48.7B</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">2025 ETF 순유입</div><div class="gtrack"><div class="gfill" style="width:97%;background:var(--purple)"></div></div><div class="gpct" style="color:var(--purple)">$47.2B</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">IBIT AUM</div><div class="gtrack"><div class="gfill" style="width:88%;background:var(--pink)"></div></div><div class="gpct" style="color:var(--pink)">$86B+</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">전체 ETF 보유</div><div class="gtrack"><div class="gfill" style="width:71%;background:var(--cyan)"></div></div><div class="gpct" style="color:var(--cyan)">1.5M₿</div></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--muted2);line-height:1.7;padding:10px;background:rgba(155,109,255,.05);border-radius:8px;border-left:2px solid var(--purple)">
+        <strong style="color:var(--text)">게임체인저:</strong> ETF들이 매일 신규 채굴량(~450 BTC)의 수 배를 흡수. 2026년에는 연간 채굴량 100% 이상을 ETF가 매입 예상(Bitwise). 금 ETF(GLD)가 $10B에 도달하는데 2년 vs BTC ETF는 <strong style="color:var(--purple)">7주</strong>.
+      </div>
+    </div>
+    <!-- 반감기 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:#22c55e"></span>₿ 반감기 — 역사적 수익률</div>
+      <table class="tbl">
+        <tr><th>회차</th><th>날짜</th><th>보상</th><th>12개월 수익률</th></tr>
+        <tr>
+          <td>1차</td><td style="font-size:10px">2012.11.28</td>
+          <td style="font-size:10px">50→25</td>
+          <td><strong style="color:var(--green)">+8,858%</strong></td>
+        </tr>
+        <tr>
+          <td>2차</td><td style="font-size:10px">2016.07.09</td>
+          <td style="font-size:10px">25→12.5</td>
+          <td><strong style="color:var(--green)">+294%</strong></td>
+        </tr>
+        <tr>
+          <td>3차</td><td style="font-size:10px">2020.05.11</td>
+          <td style="font-size:10px">12.5→6.25</td>
+          <td><strong style="color:var(--green)">+540%</strong></td>
+        </tr>
+        <tr>
+          <td>4차</td><td style="font-size:10px">2024.04.20</td>
+          <td style="font-size:10px">6.25→3.125</td>
+          <td><strong style="color:var(--btc)">+100% (진행)</strong></td>
+        </tr>
+        <tr>
+          <td style="color:var(--muted2)">5차</td><td style="font-size:10px;color:var(--muted2)">2028.03~04</td>
+          <td style="font-size:10px;color:var(--muted2)">3.125→1.5625</td>
+          <td style="color:var(--muted2)">예정</td>
+        </tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- DXY+나스닥 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--blue)"></span>📈 나스닥 — 고베타 자산 특성</div>
+      <table class="tbl">
+        <tr><th>위기 이벤트</th><th>나스닥</th><th>BTC</th><th>배율</th></tr>
+        <tr><td style="font-size:10px">2020 COVID 폭락</td><td style="color:var(--red)">−30%</td><td style="color:var(--red)">−55%</td><td><span class="badge b-neg">1.8×</span></td></tr>
+        <tr><td style="font-size:10px">2022 금리인상</td><td style="color:var(--red)">−33%</td><td style="color:var(--red)">−70%</td><td><span class="badge b-neg">2.1×</span></td></tr>
+        <tr><td style="font-size:10px">2025.04 관세쇼크</td><td style="color:var(--red)">−12%</td><td style="color:var(--red)">−21%</td><td><span class="badge b-neg">1.75×</span></td></tr>
+        <tr><td style="font-size:10px">2020~2021 랠리</td><td style="color:var(--green)">+27%</td><td style="color:var(--green)">+300%</td><td><span class="badge b-strong">11×</span></td></tr>
+      </table>
+    </div>
+    <!-- 중국 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--pink)"></span>🐉 중국 — 위안화 절하와 자본도피</div>
+      <div style="font-size:11px">
+        <div style="padding:10px 12px;background:rgba(255,107,181,.05);border-radius:8px;margin-bottom:8px;border-left:2px solid var(--pink)">
+          <strong style="color:var(--pink)">위안화 절하 → BTC 상승 메커니즘</strong>
+          <p style="color:var(--muted2);margin-top:3px;line-height:1.6">CNY 절하 → 자본통제 회피 목적 BTC 매수↑ → 중국발 수요 급증</p>
+          <p style="color:var(--muted2);margin-top:3px"><strong style="color:var(--text)">검증 사례:</strong> 2013년 (+900%), 2015년 위안화 절하 직후 BTC 급등</p>
+        </div>
+        <div style="padding:10px 12px;background:rgba(255,59,107,.05);border-radius:8px;border-left:2px solid var(--red)">
+          <strong style="color:var(--red)">2025 미중 무역전쟁 영향</strong>
+          <p style="color:var(--muted2);margin-top:3px;line-height:1.6">관세 104% 선언 → BTC −16%. 유예 → +15%. 중국 거절 → −3.2%. 고변동성 지속.</p>
+          <p style="color:var(--muted2);margin-top:3px">BTC 채굴 장비 중국산 관세 부과 → <strong style="color:var(--text)">채굴 원가 22~36% 상승</strong> 부수 효과</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- 전기료 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--yellow)"></span>⚡ 전기료 — 채굴 원가 구조</div>
+      <div style="margin-bottom:10px">
+        <div class="grow"><div class="gl" style="font-size:10px">이란 (최저)</div><div class="gtrack"><div class="gfill" style="width:1%;background:var(--green);min-width:4px"></div></div><div class="gpct" style="color:var(--green);font-size:9px">$1.3K</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">미국 텍사스</div><div class="gtrack"><div class="gfill" style="width:27%;background:var(--blue)"></div></div><div class="gpct" style="color:var(--blue);font-size:9px">$35K</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">미국 평균</div><div class="gtrack"><div class="gfill" style="width:87%;background:var(--btc)"></div></div><div class="gpct" style="color:var(--btc);font-size:9px">$111K</div></div>
+        <div class="grow"><div class="gl" style="font-size:10px">독일 (최고권)</div><div class="gtrack"><div class="gfill" style="width:100%;background:var(--red)"></div></div><div class="gpct" style="color:var(--red);font-size:9px">$321K</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted2);line-height:1.5">※ BTC $100K 기준. 채굴 비용 국가별 최대 242배 차이. 손익분기 단가(2025): ~$0.07/kWh</div>
+    </div>
+    <!-- 금값 -->
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:#FFD700"></span>🥇 금값 — 시기별 상관 변화</div>
+      <table class="tbl">
+        <tr><th>시기</th><th>상관도</th><th>상황</th></tr>
+        <tr><td>2017~2019</td><td style="color:var(--muted2)">~+0.10</td><td style="font-size:10px;color:var(--muted2)">BTC 독자적 투기 사이클</td></tr>
+        <tr><td>2020.03</td><td style="color:var(--orange)">동반 하락</td><td style="font-size:10px;color:var(--muted2)">패닉셀 동조화 (일시적)</td></tr>
+        <tr><td>2022~2024</td><td style="color:var(--green)">+0.50~0.60</td><td style="font-size:10px;color:var(--muted2)">인플레 헤지 서사 공유</td></tr>
+        <tr><td>2025 현재</td><td style="color:var(--red)">디커플링</td><td style="font-size:10px;color:var(--muted2)">금 +16% vs BTC −6% (Q1)</td></tr>
+      </table>
+      <div style="font-size:10px;color:var(--muted2);margin-top:8px;line-height:1.5">공통 드라이버: 달러 약세·실질금리↓. BTC는 나스닥과도 동조화되어 금처럼 순수한 안전자산이 아님.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  SEC 3 : 역사적 이벤트
+════════════════════════════════════ -->
+<div class="sec" id="s3">
+  <div class="sec-header">
+    <div class="sec-icon">📅</div>
+    <div>
+      <div class="sec-title">역사적 주요 이벤트 — BTC × 글로벌 경제</div>
+      <div class="sec-desc">2012~2025 주요 매크로 이벤트와 BTC 가격 반응 타임라인</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--green)"></span>상승 촉매 이벤트</div>
+      <div class="tl">
+        <div class="tlitem" style="--c:var(--green)">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--green);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--green)">2020.03 — Fed 제로금리 + QE</div>
+          <div class="tl-title">역대 최대 통화 팽창</div>
+          <div class="tl-body">Fed 0%대 금리 + QE 무제한. 글로벌 M2 +25%. BTC $5K → $69K (+1,280%). 기관 첫 진입(MicroStrategy·Tesla).</div>
+          <span class="tl-tag" style="background:rgba(0,229,160,.15);color:var(--green);border:1px solid rgba(0,229,160,.3)">+1,280% (21개월)</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:#22c55e">2020.05 — 3차 반감기</div>
+          <div class="tl-title">공급 충격 + QE 시너지</div>
+          <div class="tl-body">블록 보상 12.5→6.25 BTC. 공급 감소 + Fed QE 동시 발생으로 역대 최강 상승 사이클.</div>
+          <span class="tl-tag" style="background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">공급 직접 감소</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--purple);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--purple)">2024.01 — 현물 ETF 승인</div>
+          <div class="tl-title">제도권 자금의 문이 열리다</div>
+          <div class="tl-body">BlackRock·Fidelity 등 현물 BTC ETF 미국 SEC 승인. 출시 7주 만에 $10B 돌파. 반감기 전에 ATH($73K) 달성하는 이례적 사건.</div>
+          <span class="tl-tag" style="background:rgba(155,109,255,.15);color:var(--purple);border:1px solid rgba(155,109,255,.3)">구조적 수요 창출</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:#22c55e">2024.04 — 4차 반감기</div>
+          <div class="tl-title">보상 6.25→3.125 BTC</div>
+          <div class="tl-body">ETF 유입 + 반감기 공급 충격 + Fed 인하 기대. BTC $64K에서 출발해 1년 내 ATH $126K 달성.</div>
+          <span class="tl-tag" style="background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)">역대 최초 ATH 전 반감기</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--btc);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--btc)">2024.11 — 트럼프 대선 승리</div>
+          <div class="tl-title">크립토 친화 정책 기대</div>
+          <div class="tl-body">트럼프 "미국을 크립토 수도로" 선언. BTC 30% 급등해 $89K. 전략적 BTC 비축 계획 발표로 국가급 수요 서사 형성.</div>
+          <span class="tl-tag" style="background:rgba(247,147,26,.15);color:var(--btc);border:1px solid rgba(247,147,26,.3)">+30% (1주)</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--red)"></span>하락 충격 이벤트</div>
+      <div class="tl">
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--red)">2021.05 — 중국 채굴 금지</div>
+          <div class="tl-title">해시레이트 50% 급락</div>
+          <div class="tl-body">중국 전면 채굴 금지. 글로벌 해시레이트 절반 사라짐. BTC −50% 폭락. 단기 충격 후 채굴 미국 이전으로 장기 탈중앙화 강화.</div>
+          <span class="tl-tag" style="background:rgba(255,59,107,.15);color:var(--red);border:1px solid rgba(255,59,107,.3)">−50% (단기)</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--red)">2022.03~12 — Fed 공격적 금리인상</div>
+          <div class="tl-title">11차례 금리 인상, 0→5.5%</div>
+          <div class="tl-body">40년 만의 최고 인플레 대응. QT + 금리 급등. BTC $47K → $16K (−66%). Terra·FTX 붕괴도 겹쳐 최악의 크립토 겨울.</div>
+          <span class="tl-tag" style="background:rgba(255,59,107,.15);color:var(--red);border:1px solid rgba(255,59,107,.3)">−66% (9개월)</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--orange);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--orange)">2025.04 — 미중 관세 쇼크</div>
+          <div class="tl-title">트럼프 중국 관세 104% 선언</div>
+          <div class="tl-body">4월 2일 상호관세 행정명령. BTC −16% (4/8까지). $19B 청산 이벤트. 단, 90일 유예 후 +15% 반등. VIX 60 돌파.</div>
+          <span class="tl-tag" style="background:rgba(255,124,64,.15);color:var(--orange);border:1px solid rgba(255,124,64,.3)">−16% → +15% 반등</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--red);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--red)">2025.10 — 중국 관세 100% 충격</div>
+          <div class="tl-title">BTC ATH 후 급락</div>
+          <div class="tl-body">10월 ATH $126,198 달성 직후 관세 충격으로 급락. $19B 역대 최대 청산 이벤트. BTC가 안전자산 역할을 하지 못함을 재확인.</div>
+          <span class="tl-tag" style="background:rgba(255,59,107,.15);color:var(--red);border:1px solid rgba(255,59,107,.3)">ATH 후 역대 최대 청산</span>
+        </div>
+        <div class="tlitem">
+          <div style="position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:var(--yellow);border:2px solid var(--bg)"></div>
+          <div class="tl-date" style="color:var(--yellow)">2025~2026 — 금값 디커플링</div>
+          <div class="tl-title">금 사상 최고 vs BTC 상대 부진</div>
+          <div class="tl-body">2025년 금 +65% (사상 최고 $4,000), BTC는 상대적 부진. 금은 지정학·중앙은행 수요, BTC는 나스닥과 동조화. 역사적 디커플링 확인.</div>
+          <span class="tl-tag" style="background:rgba(255,209,102,.15);color:var(--yellow);border:1px solid rgba(255,209,102,.3)">구조적 디커플링</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  SEC 4 : 현재 신호
+════════════════════════════════════ -->
+<div class="sec" id="s4">
+  <div class="sec-header">
+    <div class="sec-icon">🚦</div>
+    <div>
+      <div class="sec-title">현재 신호 대시보드 (2025~2026)</div>
+      <div class="sec-desc">각 인자의 현재 BTC에 대한 우호/중립/경고 상태</div>
+    </div>
+  </div>
+
+  <!-- Signal grid -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px;margin-bottom:24px">
+
+    <div style="padding:18px;background:rgba(0,229,160,.06);border:1px solid rgba(0,229,160,.2);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">💵</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">글로벌 M2</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--green);margin:0 auto 8px;box-shadow:0 0 12px rgba(0,229,160,.6)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--green)">🟢 강한 매수 신호</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">재확장 진행 중<br>70일 후 BTC 반영 예정</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">₿</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">반감기 사이클</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:#22c55e;margin:0 auto 8px;box-shadow:0 0 12px rgba(34,197,94,.6)"></div>
+      <div style="font-size:11px;font-weight:700;color:#22c55e">🟢 우호적</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">2024.04 이후 사이클 중반<br>5차 반감기: 2028년</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(155,109,255,.06);border:1px solid rgba(155,109,255,.2);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🏦</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">기관 ETF 유입</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--green);margin:0 auto 8px;box-shadow:0 0 12px rgba(0,229,160,.6)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--green)">🟢 매수 지지</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">$87B 누적, 2026 Q1도 지속<br>채굴량 100% 이상 흡수</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(0,229,160,.05);border:1px solid rgba(0,229,160,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🏛️</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">미국 금리</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--green);margin:0 auto 8px;box-shadow:0 0 12px rgba(0,229,160,.5)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--green)">🟢 우호적</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">6차례 인하 진행<br>유동성 개선 중</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">📉</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">DXY 달러</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--green);margin:0 auto 8px;box-shadow:0 0 12px rgba(0,212,255,.5)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--green)">🟢 우호적</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">관세→달러 약세 압력<br>인버스 달러 헤지 유효</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,209,102,.05);border:1px solid rgba(255,209,102,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">📈</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">나스닥 / S&P500</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--yellow);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,209,102,.5)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--yellow)">🟡 중립</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">미중 무역분쟁 변동성<br>방향 불명확</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,124,64,.05);border:1px solid rgba(255,124,64,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">😰</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">VIX 공포지수</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--orange);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,124,64,.5)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--orange)">🟠 주의</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">지정학 이벤트 시<br>간헐적 급등 위험</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,107,181,.05);border:1px solid rgba(255,107,181,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🐉</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">위안화 / 중국</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--yellow);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,209,102,.4)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--yellow)">🟡 복합 신호</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">절하 진행 → 자본도피 서사<br>vs 무역전쟁 리스크오프</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,209,102,.04);border:1px solid rgba(255,209,102,.12);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">⚡</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">전기료</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--yellow);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,209,102,.4)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--yellow)">🟡 중립</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">채굴 마진 타이트<br>재생에너지 확대 중</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,124,64,.04);border:1px solid rgba(255,124,64,.12);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🛢️</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">유가 / CPI</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--orange);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,124,64,.4)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--orange)">🟠 주의</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">중동 분쟁 유가 급등<br>CPI 인플레 상방 리스크</div>
+    </div>
+
+    <div style="padding:18px;background:rgba(255,59,107,.04);border:1px solid rgba(255,59,107,.15);border-radius:10px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🥇</div>
+      <div style="font-size:12px;font-weight:700;margin-bottom:6px">국제 금값</div>
+      <div style="width:18px;height:18px;border-radius:50%;background:var(--red);margin:0 auto 8px;box-shadow:0 0 12px rgba(255,59,107,.5)"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--red)">🔴 디커플링</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:5px;line-height:1.5">금 ATH 지속 vs BTC 부진<br>상관관계 최저 수준</div>
+    </div>
+
+  </div>
+
+  <!-- 점수 집계 -->
+  <div class="card">
+    <div class="ch"><span class="pip" style="background:var(--btc)"></span>현재 환경 종합 점수</div>
+    <div class="g3" style="margin-top:8px">
+      <div style="text-align:center;padding:20px;background:rgba(0,229,160,.06);border-radius:10px;border:1px solid rgba(0,229,160,.2)">
+        <div style="font-size:40px;font-weight:900;font-family:'IBM Plex Mono',monospace;color:var(--green)">5</div>
+        <div style="font-size:12px;color:var(--green);font-weight:700;margin-top:4px">🟢 우호 인자</div>
+        <div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.5">글로벌 M2 · 반감기<br>기관 ETF · 금리 · DXY</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:rgba(255,209,102,.05);border-radius:10px;border:1px solid rgba(255,209,102,.18)">
+        <div style="font-size:40px;font-weight:900;font-family:'IBM Plex Mono',monospace;color:var(--yellow)">4</div>
+        <div style="font-size:12px;color:var(--yellow);font-weight:700;margin-top:4px">🟡 중립 인자</div>
+        <div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.5">나스닥 · 위안화<br>전기료 · (S&P500)</div>
+      </div>
+      <div style="text-align:center;padding:20px;background:rgba(255,59,107,.05);border-radius:10px;border:1px solid rgba(255,59,107,.18)">
+        <div style="font-size:40px;font-weight:900;font-family:'IBM Plex Mono',monospace;color:var(--red)">2</div>
+        <div style="font-size:12px;color:var(--red);font-weight:700;margin-top:4px">🔴 경고 인자</div>
+        <div style="font-size:10px;color:var(--muted2);margin-top:6px;line-height:1.5">금값 디커플링<br>VIX·유가 리스크</div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;padding:12px;background:rgba(247,147,26,.05);border-radius:8px;border:1px solid rgba(247,147,26,.15)">
+      <span style="font-size:13px;font-weight:700;color:var(--btc)">종합: 구조적 상승 기반 유효 — 단기 변동성 주의</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+  SEC 5 : 종합 결론
+════════════════════════════════════ -->
+<div class="sec" id="s5">
+  <div class="sec-header">
+    <div class="sec-icon">🔮</div>
+    <div>
+      <div class="sec-title">종합 결론 — 11대 인자 통합 인사이트</div>
+      <div class="sec-desc">가장 중요한 패턴, 리스크, 투자 전략적 시사점</div>
+    </div>
+  </div>
+
+  <!-- 핵심 결론 블록들 -->
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--green)"></span>① 최강 3인방 조합 — 역대 최대 강세장 공식</div>
+      <div class="csub">글로벌 M2 + 반감기 + 기관 ETF = 역사상 최강 환경</div>
+      <div style="padding:14px;background:rgba(0,229,160,.05);border-radius:8px;border:1px solid rgba(0,229,160,.15);font-size:11px;color:var(--muted2);line-height:1.8">
+        <strong style="color:var(--text)">2020~2021년:</strong> 글로벌 M2 +25% + 3차 반감기 = BTC +1,280%<br>
+        <strong style="color:var(--text)">2024~2025년:</strong> 글로벌 M2 재확장 + 4차 반감기 + ETF($48.7B) = BTC $64K→$126K<br><br>
+        <strong style="color:var(--green)">이 세 인자가 동시에 우호적일 때 역대 최대 강세장이 형성됩니다.</strong><br>
+        현재(2026): 셋 모두 우호 방향 유지 중.
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--red)"></span>② 최강 리스크 조합 — 동시 악화 시 급락</div>
+      <div class="csub">VIX 급등 + 나스닥 하락 + 미중 무역전쟁 = 단기 급락</div>
+      <div style="padding:14px;background:rgba(255,59,107,.05);border-radius:8px;border:1px solid rgba(255,59,107,.15);font-size:11px;color:var(--muted2);line-height:1.8">
+        <strong style="color:var(--text)">2022년:</strong> Fed 금리인상 + VIX 급등 + 나스닥 −33% = BTC −66%<br>
+        <strong style="color:var(--text)">2025.04:</strong> VIX 60+ + 관세 쇼크 + 나스닥 −12% = BTC −21%<br><br>
+        <strong style="color:var(--red)">세 인자 동시 악화 시 BTC는 나스닥 대비 1.75~2.1배 낙폭을 기록합니다.</strong><br>
+        단, 극단 공포 이후에는 역매수 기회가 반복적으로 나타납니다.
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--yellow)"></span>③ 전기료 — 가격 하한선(Floor) 메커니즘</div>
+      <div style="font-size:11px;color:var(--muted2);line-height:1.8;padding:14px;background:rgba(255,209,102,.04);border-radius:8px;border:1px solid rgba(255,209,102,.12)">
+        전기료는 BTC의 <strong style="color:var(--text)">'내재 가치 하한선'</strong>을 형성합니다.<br>
+        BTC 가격이 채굴 원가 이하로 하락하면 → 비효율 채굴자 이탈 → 공급 감소 → 가격 지지.<br>
+        현재 미국 평균 채굴 원가 ~$111K, 텍사스 대형 팜 ~$35K.<br>
+        <strong style="color:var(--yellow)">결론: BTC가 장기적으로 '0원'이 되기 어려운 구조적 이유.</strong>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><span class="pip" style="background:var(--pink)"></span>④ 금값 디커플링 — BTC는 순수 안전자산이 아니다</div>
+      <div style="font-size:11px;color:var(--muted2);line-height:1.8;padding:14px;background:rgba(255,107,181,.04);border-radius:8px;border:1px solid rgba(255,107,181,.12)">
+        2025년 금 +65% vs BTC 상대 부진. 핵심 차이:<br>
+        - 금: 지정학 위기 → 안전자산 수요↑<br>
+        - BTC: 지정학 위기 → 리스크 오프로 매도됨<br>
+        BTC는 <strong style="color:var(--text)">나스닥과의 상관(+0.77)이 금과의 상관(+0.38)보다 훨씬 강합니다.</strong><br>
+        <strong style="color:var(--pink)">결론: BTC = '고베타 테크 자산' + '인플레 헤지' 복합체. 순수 안전자산 아님.</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- 최종 통합 insight -->
+  <div class="insight purple">
+    <div class="insight-title" style="color:var(--purple)">🔮 FINAL — 11대 인자 통합 투자 시사점</div>
+    <p>
+      <strong>BTC는 2020년 이후 완전한 '글로벌 거시 자산'으로 진화했습니다.</strong> 단순 디지털 화폐가 아니라, 글로벌 유동성(M2)·달러 강도(DXY)·기술주 흐름(나스닥)·공급 사이클(반감기)·제도권 자금(ETF)이 교차하는 복합 매크로 자산입니다.
+      <br><br>
+      <em>가장 강력한 상승 환경</em>: 글로벌 M2 확장 + 반감기 사이클 상반부 + ETF 순유입 증가 + Fed 금리인하 + DXY 약세가 동시에 발생할 때. 2020~2021년이 완벽한 교과서 사례.
+      <br><br>
+      <em>가장 강력한 하락 트리거</em>: Fed 금리 급인상 + DXY 강세 + VIX 급등 + 나스닥 급락이 겹칠 때. 2022년이 대표 사례. 하락 시 나스닥의 1.75~2.1배 낙폭.
+      <br><br>
+      <strong>2026년 현재 환경 최종 판단:</strong> 5 우호(M2·반감기·ETF·금리·DXY) / 4 중립(나스닥·위안화·전기료·S&P) / 2 경고(금값 디커플링·VIX). <em>구조적 상승 기반은 여전히 유효하나, 지정학(중동·무역전쟁)과 CPI 서프라이즈가 단기 변동성 확대 핵심 변수.</em>
+      <br><br>
+      <strong>핵심 모니터링 인자 TOP 3:</strong> ① 글로벌 M2 방향 (70일 선행) ② ETF 일일 순유입 (즉각 가격 연동) ③ DXY 레벨 (달러 강/약세 전환점).
+    </p>
+  </div>
+
+  <!-- 모니터링 체크리스트 -->
+  <div class="card" style="margin-top:20px">
+    <div class="ch"><span class="pip" style="background:var(--btc)"></span>실전 모니터링 체크리스트</div>
+    <div class="g3" style="margin-top:4px">
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--green);margin-bottom:10px">🟢 주간 체크 (상승 신호)</div>
+        <div style="font-size:10.5px;color:var(--muted2);line-height:2">
+          ☐ 글로벌 M2 전주 대비 증가?<br>
+          ☐ BTC ETF 일일 순유입 플러스?<br>
+          ☐ DXY 100 이하 유지?<br>
+          ☐ Fed 금리인하 기대 유지?<br>
+          ☐ 나스닥 주간 플러스?
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--red);margin-bottom:10px">🔴 주간 체크 (하락 경고)</div>
+        <div style="font-size:10.5px;color:var(--muted2);line-height:2">
+          ☐ VIX 30 이상 급등?<br>
+          ☐ DXY 106 이상 돌파?<br>
+          ☐ CPI 예상치 상회?<br>
+          ☐ Fed 매파적 발언 등장?<br>
+          ☐ 미중 무역전쟁 재확전?
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:var(--yellow);margin-bottom:10px">🟡 월간 체크 (중장기)</div>
+        <div style="font-size:10.5px;color:var(--muted2);line-height:2">
+          ☐ 반감기 사이클 위치 확인<br>
+          ☐ 미국 M2 전월 대비 방향<br>
+          ☐ 위안화 환율 추세<br>
+          ☐ 금·BTC 상관계수 변화<br>
+          ☐ 기관 ETF 월간 누적
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- ══ FOOTER ══ -->
+<div class="footer">
+  <div class="footer-note">
+    ※ 본 분석은 2012~2025년 데이터 기반 학술·시장 연구를 종합한 교육용 자료입니다.<br>
+    상관계수는 해당 기간 근사치이며, 투자 권유가 아닙니다. 투자 결정은 본인의 판단과 책임 하에 하시기 바랍니다.
+  </div>
+  <div class="footer-tag">BITCOIN × MACRO ANALYSIS · 11 FACTORS · 2025</div>
+</div>
+
+</div><!-- /wrap -->
+
+<script>
+const tabs = document.querySelectorAll('.ntab');
+const secs = document.querySelectorAll('.sec');
+function sw(i){
+  tabs.forEach((t,j)=>t.classList.toggle('active',j===i));
+  secs.forEach((s,j)=>s.classList.toggle('active',j===i));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>
